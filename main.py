@@ -31,7 +31,8 @@ import exiftool
 os.environ["FLET_SECRET_KEY"] = os.urandom(12).hex()
 secret_key = "1234"
 
-def example():
+# Chip function
+def chip_select():
     async def amenity_selected(e):
         await amenity_chips.update_async()
 
@@ -48,6 +49,7 @@ def example():
         )
     return Column(controls=[title, amenity_chips])   
 
+# Main page
 def main(page: Page):
 
     page.title = "Image List from Directory"
@@ -65,13 +67,8 @@ def main(page: Page):
 
 
     # Container to hold image components
-    image_container = GridView(height=400,
-        width=800,
-        runs_count=5,
-        max_extent=150,
-        child_aspect_ratio=1.0,
-        spacing=5,
-        padding=5,
+    image_container = GridView(height=400, width=800, runs_count=5, max_extent=150,
+        child_aspect_ratio=1.0, spacing=5, padding=5,
         )
     
     # Container to hold image components
@@ -97,7 +94,6 @@ def main(page: Page):
 
     # Pick files dialog
     def pick_files_result(e: FilePickerResultEvent):
-        
         csv_file_path.value = (
             ", ".join(map(lambda f: f.path, e.files)) if e.files else "Cancelled!"
         )
@@ -107,7 +103,7 @@ def main(page: Page):
     selected_files = Text()
 
     # Save file dialog
-    def save_file_result(e: FilePickerResultEvent):
+    def save_file_result(e:FilePickerResultEvent):
         save_file_path.value = e.path if e.path else "Cancelled!"
         save_file_path.update()
 
@@ -138,7 +134,7 @@ def main(page: Page):
                 csv_data_container.controls.clear()
                 for idx, row in df.iterrows():
                     keywords_list = row['Keywords'].split(';')
-                    keyword_texts = [Chip(label=Text(keyword),on_select=example, selected=True) for i, keyword in enumerate(keywords_list)]
+                    keyword_texts = [Chip(label=Text(keyword),on_select=chip_select, selected=True) for i, keyword in enumerate(keywords_list)]
                         
                     csv_data_container.controls.append(
                         Column([
@@ -197,6 +193,7 @@ def main(page: Page):
         Text(value="Keywords : "),
         image_container,
         
+        # Pick csv files
         Row(
             [  
                 ElevatedButton(
@@ -213,10 +210,13 @@ def main(page: Page):
                 selected_files,
             ]
         ),
+
+        # Load csv data
         Row([csv_file_path, ElevatedButton("Load csv data", on_click=read_csv)]),
 
         csv_data_container,
         
+        # Save file
         Row(
             [
                 ElevatedButton(
