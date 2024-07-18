@@ -16,7 +16,29 @@ data = [
 
 ]
 
-adobe_categories=()
+adobe_categories = [
+    "Animals",
+    "Buildings and Architecture",
+    "Business",
+    "Drinks",
+    "The Environment",
+    "States of Mind",
+    "Food",
+    "Graphic Resources",
+    "Hobbies and Leisure",
+    "Industry",
+    "Landscape",
+    "Lifestyle",
+    "People",
+    "Plants and Flowers",
+    "Culture and Religion",
+    "Science",
+    "Social Issues",
+    "Sports",
+    "Technology",
+    "Transport",
+    "Travel"
+]
 
 # Container to hold image components
 
@@ -116,8 +138,12 @@ categories_select=ft.Dropdown(
     width=200,
 )
 
-progress_bar = ft.ProgressBar(value=0)
+progress_bar = ft.ProgressBar(
+    value=0,
+    bar_height=1,)
 csv_data_container = ft.Column()
+
+
 main_prompt_list = ['Africa', 'Algeria', 'Angola', 'Benin',]
 keywords_list = []
 images_select_list = []
@@ -178,7 +204,9 @@ def main(page: ft.Page):
     page.window_width = 1000
     page.window_height = 1000
     
-    
+    def on_change(event):
+        print("Selected category:", category_dropdown.value(index))
+
     #Function \\\\\\\\\\
 
     def embed_metadata():
@@ -186,7 +214,7 @@ def main(page: ft.Page):
         images = sorted([f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
         num = int(images_per_prompt.value)
         process_count = 0  # Initialize image count
-
+        selected_index_g=""
         cleaned_string = main_prompt.value.replace("\n", ",").replace(", ", ",").strip(",")
         main_prompt_list = [promptst.strip() for promptst in cleaned_string.split(",") if promptst.strip()]
         total_prompt = len(main_prompt_list)
@@ -226,7 +254,7 @@ def main(page: ft.Page):
                     "Filename": image_file,
                     "Title": title,
                     "Keywords": keywords,
-                    "Category": 12,
+                    "Category": selected_index+1,
                     "Releases": None,
                 }
 
@@ -498,6 +526,25 @@ def main(page: ft.Page):
 
     # Button to read data from CSV
     read_button = ft.OutlinedButton(text="Read from CSV", on_click=read_csv)
+
+    # Create dropdown menu for categories
+    def on_change_category_dropdown(event):
+        global selected_index
+        selected_index = int(event.control.value.split(" : ")[0]) - 1  # Adjust to zero-indexed
+        selected_category = adobe_categories[selected_index]
+        print("Selected category:", selected_category)
+        print(f"Selected category: {selected_category} (Index: {selected_index})")
+
+        page.update()  # Ensure the page updates if necessary
+
+        return selected_index
+
+    category_dropdown = ft.Dropdown(
+        label="Select Category",
+        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
+        on_change=on_change_category_dropdown
+    )
+
      # Container to hold the table
     table_container = ft.Column()
 
@@ -506,17 +553,18 @@ def main(page: ft.Page):
         animation_duration=300,
         tabs=[
             ft.Tab(
-                text="Images Metadata",
+                text="Images Massive Metadata",
                 icon=ft.icons.DATASET_OUTLINED,
                 content=ft.Container(
                     content=ft.Column([
+                        progress_bar,
                         ft.Row([
                             directory_path,
                             image_count_label, 
                             ],
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         ),
-                        progress_bar,
+                        
                         ft.Row([
                             ft.ResponsiveRow([
                                 ft.Row(controls=[
@@ -538,9 +586,9 @@ def main(page: ft.Page):
                             spacing=10,
                             expand=True,
                         ),
-                        image_metadata,             
-                        image_title,
-                        image_keywords,
+                        #image_metadata,             
+                        #image_title,
+                        #image_keywords,
                         ft.Row([]),   
                     ]),
                     alignment=ft.alignment.top_left
@@ -549,21 +597,52 @@ def main(page: ft.Page):
             ft.Tab(
                 text="Images Edit",
                 icon=ft.icons.IMAGE_SEARCH,
-                
-                content=ft.Text("This is Tab 2"),
+                content=ft.Container(
+                    content=ft.Column([
+                        progress_bar,
+                        ft.Row([
+                            #directory_path,
+                            #image_count_label, 
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        
+                        ft.Row([
+                            ft.ResponsiveRow([
+                                ft.Row(controls=[
+                                #main_container,
+                                ft.GestureDetector(content=
+                                    ft.VerticalDivider(),
+                                    drag_interval=10,
+                                    on_pan_update=move_vertical_divider,
+                                    on_hover=show_draggable_cursor,
+                                ),
+                                #right_container,
+                                ],
+                                spacing=0,
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                ) ],
+                                spacing=10,
+                                expand=True,
+                            )],
+                            spacing=10,
+                            expand=True,
+                        ),
+                    ]),
+                )
             ),
             ft.Tab(
                 text="Re-Upload batch",
                 icon=ft.icons.BATCH_PREDICTION,
-                content=ft.Text("This is Tab 3"),
+                content=ft.Text("Re-Upload batch"),
             ),
             ft.Tab(
                 text="Setting",
                 icon=ft.icons.SETTINGS,
-                content=ft.Text("This is Tab 4"),
+                content=ft.Text("Setting"),
             ),
         ],
-        expand=1,
+        expand=True,
         tab_alignment=ft.TabAlignment.FILL,
     )
 
@@ -589,6 +668,7 @@ def main(page: ft.Page):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
                     
                 #ft.Text("Prompt to Title"),
+                category_dropdown,
                 images_per_prompt,
                 prefix_prompt,
                 main_prompt,
