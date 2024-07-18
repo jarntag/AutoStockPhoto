@@ -2,6 +2,25 @@ import flet as ft
 import pandas as pd
 import exiftool
 import os
+
+
+
+# Container to hold components
+right_container = ft.Container(
+        bgcolor=ft.colors.BROWN_400,
+        alignment=ft.alignment.center,
+        width=300,  # Start width, adjusted according to total width
+        expand=False,
+    )
+
+main_container = ft.Container(
+    bgcolor=ft.colors.ORANGE_300,
+    alignment=ft.alignment.center,
+    width=700,
+    expand=True,
+        
+)
+
 # async def function  \\\\\\\\\\
 # Chip function
 def chip_select():
@@ -21,30 +40,43 @@ def chip_select():
         )
     return ft.Column(controls=[title, amenity_chips])  
 
+async def move_vertical_divider(e: ft.DragUpdateEvent):
+        new_width = main_container.width + e.delta_x
+        if 100 <= new_width <= 900 and 150 <= right_container.width - e.delta_x:
+            main_container.width = new_width
+            right_container.width -= e.delta_x
+            await main_container.update_async()
+            await right_container.update_async()
+
+async def show_draggable_cursor(e: ft.HoverEvent):
+        e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
+        await e.control.update_async()    
+
 # Main page  \\\\\\\\\\
 def main(page: ft.Page):
 
     # Page config \\\\\\\\\\
-    page.title = "Image Metadata Viewer"
+    page.title = "Image Metadata Editer"
     page.window_width = 1000
     page.window_height = 1000
 
     # Text widget to display the selected directory path
-    directory_path = ft.TextField(label="Images directory path")
+    directory_path = ft.Text("Select images directory path first! ")
     csv_file_path = ft.TextField(label="CSV File Path")
-    prefix_prompt = ft.TextField(label="Prefix prompt", value="Portrait view of a regular happy smiling",
+    prefix_prompt = ft.TextField(label="Prefix prompt", value="",
         min_lines=1,max_lines=2, multiline=True,color=ft.colors.BLUE_700,)
     subfix_prompt = ft.TextField(label="Subfix prompt", value=", ultra realistic, candid, social media, avatar image, plain solid background",
         min_lines=1,max_lines=2, multiline=True,color=ft.colors.BLUE_700,)
-    main_prompt = ft.TextField(label="Main prompt matrix List", value="thai",
+    main_prompt = ft.TextField(label="Main prompt matrix List", value="",
         min_lines=1,max_lines=5, multiline=True,color=ft.colors.BLUE_700,)
-    enhance_prompt = ft.TextField(label="Enhance prompt matrix List", value="boy")
+    enhance_prompt = ft.TextField(label="Enhance prompt matrix List", value="",
+        min_lines=1,max_lines=2, multiline=True,color=ft.colors.BLUE_700,)
     main_keywords = ft.TextField(label="Keywords", value="line1\nline2",
-        min_lines=2,max_lines=3, multiline=True,color=ft.colors.BLUE_700,)
+        min_lines=2,max_lines=5, multiline=True,color=ft.colors.BLUE_700,)
     image_title = ft.TextField(label="Title")
     image_metadata = ft.Text("Metadata")
     image_keywords = ft.TextField(label="Keywords", value="",
-        min_lines=2,max_lines=5, multiline=True,color=ft.colors.BLUE_700,)
+        min_lines=2,max_lines=3, multiline=True,color=ft.colors.BLUE_700,)
     image_keywords_chip = ft.Row([ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
         ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
         ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
@@ -53,14 +85,14 @@ def main(page: ft.Page):
     keywords_list = []
     images_select_list = []
     images_per_prompt = ft.TextField(label="images per prompt", value="4",)
-    pb = ft.ProgressBar(value=0)
+    progress_bar = ft.ProgressBar(value=0)
 
     #Contant \\\\\\\\\\
     #Appbar
     appbar=ft.AppBar(
             leading=ft.Icon(ft.icons.NOW_WALLPAPER),
             leading_width=40,
-            title=ft.Text("Image Metadata Viewer"),
+            title=ft.Text("Image Metadata Editer"),
             center_title=False,
             #bgcolor=ft.colors.SURFACE_VARIANT,
             actions=[
@@ -98,11 +130,24 @@ def main(page: ft.Page):
         on_click=lambda _: embed_metadata(),
     )
 
+    mainprompt_bt=ft.ElevatedButton("Load txt data",
+        icon=ft.icons.UPLOAD_FILE,
+        on_click=lambda _: get_txt_main.get_directory_path(
+        file_type=ft.FilePickerFileType.CUSTOM,
+        allowed_extensions=["csv"]
+        ),
+    )
+
+    check_metadata_bt=ft.ElevatedButton("check metadata",
+        icon=ft.icons.PLAYLIST_ADD_CHECK_CIRCLE_OUTLINED,
+        on_click=lambda _: embed_metadata(),
+    )
+
     # Container to hold image components
     image_container = ft.GridView( runs_count=5, max_extent=150,
         child_aspect_ratio=1.0, spacing=10,)
     # Define the image container and image count label
-    image_count_label = ft.Text(value="Total Images: 0")
+    image_count_label = ft.Text(value="")
 
     # Container to hold image components
     csv_data_container = ft.Column()
@@ -135,7 +180,7 @@ def main(page: ft.Page):
                 keywords = f"{prompt}; {enhance_prompt.value}; {keywords_list}"
 
 
-                with exiftool.ExifToolHelper() as et:
+                with exiftool.ExifTool() as et:
                     et.execute("-overwrite_original", 
                            f"-XMP:Title={title}", 
                            f"-XMP:Subject={keywords}", 
@@ -144,9 +189,9 @@ def main(page: ft.Page):
                     image_count_label.value = f"Total process Images: {process_count}"
                     image_count_label.update()
                     
-                    pb.value = process_count/(total_prompt*num)
-                    pb.update()
-                    print(pb.value)    
+                    progress_bar.value = process_count/(total_prompt*num)
+                    progress_bar.update()
+                    print(keywords)    
         print(main_prompt_list)
         image_count_label.value = f"Total process Images: {process_count}"
         image_count_label.update()
@@ -177,31 +222,73 @@ def main(page: ft.Page):
     def list_images(directory):
         image_container.controls.clear()  # Clear previous images
         image_count = 0  # Initialize image count
+        card = ft.Card()
+
+        def change_color(e, card, filename):
+            if card.color == ft.colors.BLUE:
+                card.color = ft.colors.GREY_50
+                if filename in images_select_list:
+                    images_select_list.remove(filename)
+                    print(images_select_list)
+            elif card.color == ft.colors.GREY_50:
+                card.color = ft.colors.BLUE
+                if filename not in images_select_list:
+                    images_select_list.append(filename)
+                    print(images_select_list)
+            page.update()
+
+        def handle_click(e, card, image_path, filename):
+            extract_metadata(image_path)
+            change_color(e, card, filename)
+
         for filename in os.listdir(directory):
             if filename.lower().endswith(('.jpg', '.png', '.svg')):
                 image_path = os.path.join(directory, filename)
+                
+                card = ft.Card(content=
+                    ft.Container(content=
+                        ft.Stack([
+                            ft.Image(
+                                src=image_path,
+                                border_radius=ft.border_radius.all(0),
+                                tooltip=filename,
+                                fit=ft.ImageFit.COVER,
+                                width=150,
+                                height=150,
+                            ),
+                            ft.Container(content=
+                                ft.Container(content=         
+                                    ft.Row([
+                                        ft.Row([
+                                            ft.Icon(name=ft.icons.SELL, size=12),
+                                            ft.Text(value="10", size=10,),
+                                        ],alignment=ft.MainAxisAlignment.START,
+                                        ),    
+                                        ft.CircleAvatar(bgcolor=ft.colors.GREY, radius=4),
+                                    ],alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                    ),bgcolor=ft.colors.GREY_50,opacity=0.5,height=24,
+                                    alignment=ft.alignment.bottom_right,margin=0,padding=5,
+                                ),
+                                alignment=ft.alignment.bottom_center,margin=0,
+                            ),
+                            ft.Container(
+                                alignment=ft.alignment.bottom_right,margin=0,
+                                ink=True,padding=ft.padding.only(0),
+                                on_click=None,  # Set to None initially
+                            ),   
+                        ]),margin=3,
+                    ),shape=ft.RoundedRectangleBorder(radius=0),margin=0,color = ft.colors.GREY_50
+                )
+                # Now set the on_click handler
+                card.content.content.controls[2].on_click = lambda e, card=card, image_path=image_path, filename=filename: handle_click(e, card, image_path, filename)
 
-                image_component = ft.Stack([
-                    ft.Image(src=image_path, width=150, height=150,
-                        border_radius=ft.border_radius.all(10),tooltip=filename,fit=ft.ImageFit.COVER
-                        ),
-                    ft.Container(
-                    content=ft.CircleAvatar(bgcolor=ft.colors.GREEN, radius=5),
-                    alignment=ft.alignment.top_left,margin=5,),
-                    ft.Container(
-                    content= ft.Checkbox(value=False,
-                    on_change=lambda e, filename=filename: images_select(filename) ,),
-                    alignment=ft.alignment.bottom_right,margin=0,ink=True,padding=5,
-                    on_click=lambda e, image_path=image_path, : extract_metadata(image_path),
-                    ),    
-                ],)
-                image_container.controls.append(image_component)
+                image_container.controls.append(card)
                 image_count += 1  # Increment image count
         
         # Update the label with the image count
         image_count_label.value = f"Total Images: {image_count}"
         page.update()
-        return image_component
+        return card
     
 
     # FilePicker dialog to select a directory
@@ -270,49 +357,80 @@ def main(page: ft.Page):
         print(images_select_list)
         return images_select_list
     
+    def Check_metadata(image_path):
+        with exiftool.ExifToolHelper() as et:
+            metadata = et.get_metadata(image_path)[0]
+            title = metadata.get('XMP:Title', '')
+            color = ft.colors.RED if not title else ft.colors.RED
+
+        print(images_select_list)
+        return color
     
+    def Load_mainprompt_data(file_path):
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+                main_prompt.value = content
+                page.update()  # Update the page to reflect the changes
+        except Exception as e:
+            print(f"An error occurred while loading the file: {e}")
+
+    # FilePicker dialog to select a directory
+    def get_txt_result(e: ft.FilePickerResultEvent):
+        try:
+            with open(e.path, 'r') as file:
+                content = file.read()
+                main_prompt.value = content
+                page.update()  # Update the page to reflect the changes
+        except Exception as e:
+            print(f"An error occurred while loading the file: {e}")
+    get_txt_main = ft.FilePicker(on_result=get_txt_result)
     
     
 
     # hide all dialogs in overlay
-    page.overlay.extend([pick_files_dialog, get_directory_dialog])
+    page.overlay.extend([pick_files_dialog, get_directory_dialog, get_txt_main])
 
     # UI setup
     page.add(
-        appbar,
-        ft.Row([image_count_label,],alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        #appbar,
+        ft.Row([image_count_label, directory_path,],alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         ),
-        pb,
+        progress_bar,
          # Image contant layout
         ft.Row(
             [
                 ft.Container(
                     content=image_container,
                     #bgcolor=ft.colors.ORANGE_300,
-                    alignment=ft.alignment.top_center,
+                    #alignment=ft.alignment.top_center,
                     expand=True,
                 ),
                 ft.Container(
                     content=ft.Column([
                         #ft.Text("Images"),  
-                        directory_path,
-                        open_directory_bt,
-                        
+                        ft.Row([check_metadata_bt,open_directory_bt,],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
+                        ft.Divider(),    
                         #ft.Text("Prompt to Title"),
                         images_per_prompt,
                         prefix_prompt,
                         main_prompt,
+                        ft.Row([mainprompt_bt,],
+                            alignment=ft.MainAxisAlignment.END,),
+                        
                         enhance_prompt,
                         subfix_prompt,
                         #ft.Text("Keywords"),
                         # Pick csv files
                         # Load csv data
+                        main_keywords,
+                        ft.Row([ft.ElevatedButton("Test", on_click=image_metadata_Process),embed_metadata_bt, ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,), 
+                        ft.Divider(),    
                         csv_file_path,
                         ft.Row([pick_csv_bt, ft.ElevatedButton("Load csv data", on_click=read_csv)],
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
-                        main_keywords,
-                        ft.Row([ft.ElevatedButton("Test", on_click=image_metadata_Process),embed_metadata_bt, ],
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),  
                         csv_data_container,
                         
                         ], scroll=ft.ScrollMode.AUTO,alignment=ft.MainAxisAlignment.START),

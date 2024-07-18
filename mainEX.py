@@ -1,16 +1,30 @@
 import flet as ft
 import pandas as pd
-
-import exiftool
 import os
+
+# Path to save the CSV file
+save_path = 'save/sample_images.csv'
+# Sample data to be added
+data = [
+    {
+        "Filename": "image1.jpg",
+        "Title": "Beautiful Sunset",
+        "Keywords": "sunset, nature, beauty",
+        "Category": "Nature",
+        "Releases": "2024-07-18"
+    },
+
+]
 
 # Container to hold image components
 
+image_grid = ft.ListView( 
 
-image_container = ft.GridView( 
-    runs_count=5, 
-    max_extent=150,
-    child_aspect_ratio=1.0, 
+    spacing=10,
+)
+image_data = ""
+image_container = ft.ListView( 
+
     spacing=10,
 )
 main_container = ft.Container(
@@ -29,7 +43,6 @@ right_container = ft.Container(
     width=400,  # Start width, adjusted according to total width
     expand=False,
 )
-
 
 image_count_label = ft.Text(value="")
 directory_path = ft.Text("Select images directory path first!")
@@ -52,8 +65,6 @@ main_prompt = ft.TextField(
     multiline=True,
     color=ft.colors.BLUE_700,
 )
-
-
 
 enhance_prompt = ft.TextField(
     label="Enhance prompt matrix List", 
@@ -83,10 +94,6 @@ main_keywords = ft.TextField(
 csv_file_path = ft.TextField(label="CSV File Path"
 )
 
-
-
-
-
 image_title = ft.TextField(label="Title")
 image_metadata = ft.Text("Metadata")
 image_keywords = ft.TextField(
@@ -108,6 +115,7 @@ categories_select=ft.Dropdown(
 )
 
 progress_bar = ft.ProgressBar(value=0)
+csv_data_container = ft.Column()
 main_prompt_list = ['Africa', 'Algeria', 'Angola', 'Benin',]
 keywords_list = []
 images_select_list = []
@@ -155,15 +163,19 @@ async def show_draggable_cursor(e: ft.HoverEvent):
     e.control.mouse_cursor = ft.MouseCursor.RESIZE_LEFT_RIGHT
     await e.control.update_async()            
 
+# Function to save data to CSV
+def save_to_csv(e):
+    df = pd.DataFrame(data)
+    df.to_csv(save_path, index=False)
+    print(f"CSV file created and saved at {save_path}")
+
+
+
 # main function
 def main(page: ft.Page):
     page.window_width = 1000
     page.window_height = 1000
     
-    
-
-    # Container to hold image components
-    csv_data_container = ft.Column()
     
     #Function \\\\\\\\\\
 
@@ -176,7 +188,10 @@ def main(page: ft.Page):
         cleaned_string = main_prompt.value.replace("\n", ",").replace(", ", ",").strip(",")
         main_prompt_list = [promptst.strip() for promptst in cleaned_string.split(",") if promptst.strip()]
         total_prompt = len(main_prompt_list)
+
         keywords_list = main_keywords.value.replace("\n", "; ").replace(",", "; ").split("; ")
+
+        all_data = []  # List to store all data
 
         for i, prompt in enumerate(main_prompt_list):
             start_index = i * num
@@ -185,64 +200,59 @@ def main(page: ft.Page):
 
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
-                prompt_Pre=prompt.replace("\n", " ").replace("'", "")
+                prompt=prompt.replace("\n", " ").replace("'", "")
                 title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
 
-                prompt_key= prompt.lower().split()
-                # Remove any trailing punctuation from words
-                prompt_key = [word.rstrip('.,!?') for word in prompt_key]
-                # Remove words with fewer than 2 letters
-                prompt_key = [word for word in prompt_key if len(word) > 2]
-                # Remove duplicates while maintaining order
-                seen = set()
+                # Prepare prompt key
+                prompt_words = [word.rstrip('.,!?') for word in prompt.lower().split() if len(word) > 2]
                 unique_words = []
-                for word in prompt_key:
+                seen = set()
+                for word in prompt_words:
                     if word not in seen:
                         unique_words.append(word)
                         seen.add(word)
-                # Join the words with commas and add a trailing comma
-                prompt_keyp = ', '.join(unique_words) 
+                prompt_keyp = ', '.join(unique_words)
 
-                keywords = f"{prompt}; {enhance_prompt.value}; {'; '.join(keywords_list)};" " "
+                keywords = f"{prompt}; {enhance_prompt.value}; {'; '.join(keywords_list)};"
 
+                data = {
+                    "Filename": image_file,
+                    "Title": title,
+                    "Keywords": keywords,
+                    "Category": None,
+                    "Releases": None,
+                }
 
-                with exiftool.ExifToolHelper() as et:
-                    et.execute("-overwrite_original", 
-                           f"-XMP:Title={title}", 
-                           f"-XMP:Subject={keywords}", 
-                           image_path)
-                    process_count += 1
-                    image_count_label.value = f"Total process Images: {process_count}"
-                    image_count_label.update()
-                    
-                    progress_bar.value = process_count/(total_prompt*num)
-                    progress_bar.update()
-                    print(keywords)    
+                all_data.append(data)  # Append new data to the list
+
+                process_count += 1
+                image_count_label.value = f"Total process Images: {process_count}"
+                image_count_label.update()
+                
+                progress_bar.value = process_count/(total_prompt*num)
+                progress_bar.update()
+                print(keywords)   
+
+        # Extract folder name from directory path
+        folder_name = os.path.basename(os.path.normpath(path))
+
+        # Save all data to CSV file with folder name as the file name
+        csv_file_path = os.path.join(path, f"{folder_name}.csv")
+        df = pd.DataFrame(all_data)
+        df.to_csv(csv_file_path, index=False)
+        print(f"CSV file saved in folder: {csv_file_path}")
+
         print(keywords_list)
         image_count_label.value = f"Total process Images: {process_count}"
         image_count_label.update()
     # ... (rest of the code)
-    
-    def extract_metadata(image_path):
-        with exiftool.ExifToolHelper() as et:
-            metadata = et.get_metadata(image_path)
 
-            # Extract title and keywords
-            if metadata:
-            # Assuming the first element contains image metadata
-                metadata = metadata[0]
+    # Create a DataFrame from the data
+    df = pd.DataFrame(data) 
 
-                title = metadata.get('XMP:Title', '')
-                keywords = metadata.get('XMP:Subject', '')
-                image_title.value = f"{title}"
-                image_keywords.value = f"{keywords}"
-
-                image_title.update()
-                image_keywords.update()
-
-                return title, keywords
-            else:
-                return None, None
+    def extract_csv(image_path):
+        
+        return None, None
             
     # Function to list and display images in a directory
     def list_images(directory):
@@ -264,13 +274,13 @@ def main(page: ft.Page):
             page.update()
 
         def handle_click(e, card, image_path, filename):
-            extract_metadata(image_path)
+            extract_csv(image_path)
             change_color(e, card, filename)
 
         for filename in os.listdir(directory):
             if filename.lower().endswith(('.jpg', '.png', '.svg')):
                 image_path = os.path.join(directory, filename)
-                
+                image_container.controls.append(ft.Text(f"filename : {filename}",),)
                 card = ft.Card(content=
                     ft.Container(content=
                         ft.Stack([
@@ -303,12 +313,48 @@ def main(page: ft.Page):
                                 on_click=None,  # Set to None initially
                             ),   
                         ]),margin=3,
-                    ),shape=ft.RoundedRectangleBorder(radius=0),margin=0,color = ft.colors.GREY_50
+                    ),shape=ft.RoundedRectangleBorder(radius=0),
+                    margin=0,color = ft.colors.GREY_50,
+                    width=150, height=150,
                 )
                 # Now set the on_click handler
                 card.content.content.controls[2].on_click = lambda e, card=card, image_path=image_path, filename=filename: handle_click(e, card, image_path, filename)
+                right_con=ft.Column([
+                    ft.Dropdown(
+                        label="Categories",
+                        hint_text="Choose Categories",
+                        options=[
+                            ft.dropdown.Option("1. Animals"),
+                            ft.dropdown.Option("2. Buildings and Architecture"),
+                            ft.dropdown.Option("3. Business"),
+                            ft.dropdown.Option("4. Drinks"),
+                            ft.dropdown.Option("5. The Environment"),
+                            ft.dropdown.Option("6. States of Mind"),
+                        ],
+                    ),
+                    ft.CupertinoTextField(
+                        placeholder_text="Title",
+                    ),
+                    ft.CupertinoTextField(
+                        placeholder_text="Keywords",
+                    ),
+                    ft.CupertinoTextField(
+                        placeholder_text="Releases",
+                    ),
+                    ],
+                    expand=True,
+                )
+                row_con=ft.Row([
+                    card,
+                    right_con,
+                    ],
+                    alignment=ft.MainAxisAlignment.START,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    expand=True,
+                )
 
-                image_container.controls.append(card)
+                image_container.controls.append(row_con)
+                image_container.controls.append(ft.Divider(height=9,),)
                 image_count += 1  # Increment image count
         
         # Update the label with the image count
@@ -316,7 +362,6 @@ def main(page: ft.Page):
         page.update()
         return card
     
-
     # FilePicker dialog to select a directory
     def get_directory_result(e: ft.FilePickerResultEvent):
         if e.path:
@@ -342,7 +387,8 @@ def main(page: ft.Page):
             try:
                 with open(file_path, 'r') as file:
                     content = file.read()
-                    main_prompt.value = content
+                    processed_data = content.replace("\n", ",")
+                    main_prompt.value = processed_data
                     page.update()  # Update the page to reflect the changes
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
@@ -351,33 +397,25 @@ def main(page: ft.Page):
 
     get_txt_main = ft.FilePicker(on_result=get_txt_result)
 
-    # Function to read and display CSV data
+
+    # Function to read data from CSV
     def read_csv(e):
-        csv_path = csv_file_path.value
-        if os.path.isfile(csv_path):
-            df = pd.read_csv(csv_path)
-            if not df.empty:
-                csv_data_container.controls.clear()
-                for idx, row in df.iterrows():
-                    keywords_list = row['Keywords'].split(';')
-                    keyword_texts = [ft.Chip(label=ft.Text(keyword),on_select=chip_select, selected=True) for i, keyword in enumerate(keywords_list)]
-                        
-                    csv_data_container.controls.append(
-                        ft.Column([
-                            ft.Text(f"Row {idx + 1}"),
-                            ft.TextField(label="Filename", value=row['Filename']),
-                            ft.TextField(label="Title", value=row['Title']),
-                            ft.Row([*keyword_texts]),
-                            ft.TextField(label="Category", value=row['Category']),
-                            ft.TextField(label="Releases", value=row['Releases']),
-                        ])
-                    )
-                csv_data_container.update()
-            else:
-                csv_data_container.value = "CSV file is empty!"
-        else:
-            csv_data_container.value = "Invalid file path!"
-        csv_data_container.update()
+        df = pd.read_csv(save_path)
+        
+        # Create table headers
+        columns = [ft.DataColumn(ft.Text(col)) for col in df.columns]
+        
+        # Create table rows
+        rows = []
+        for _, row in df.iterrows():
+            cells = [ft.DataCell(ft.Text(str(cell))) for cell in row]
+            rows.append(ft.DataRow(cells))
+        
+        # Create DataTable and add it to the page
+        table = ft.DataTable(columns=columns, rows=rows)
+        table_container.controls.clear()
+        table_container.controls.append(table)
+        page.update()
 
     # FilePicker dialog to select a directory
     def image_metadata_Process(e):
@@ -433,7 +471,7 @@ def main(page: ft.Page):
         on_click=lambda _: embed_metadata(),
     )
 
-    mainprompt_bt=ft.ElevatedButton("Load txt data",
+    mainprompt_bt=ft.ElevatedButton("Load Prompt txt data",
         icon=ft.icons.UPLOAD_FILE,
         on_click=lambda _: get_txt_main.pick_files(
             allow_multiple=True,
@@ -449,6 +487,12 @@ def main(page: ft.Page):
 
     load_csv_bt=ft.ElevatedButton("Load csv data", on_click=read_csv)
 
+    save_button = ft.OutlinedButton(text="Save to CSV", on_click=save_to_csv)
+
+    # Button to read data from CSV
+    read_button = ft.OutlinedButton(text="Read from CSV", on_click=read_csv)
+     # Container to hold the table
+    table_container = ft.Column()
 
     # hide all dialogs in overlay
     page.overlay.extend([pick_files_dialog, get_directory_dialog, get_txt_main])
@@ -529,12 +573,8 @@ def main(page: ft.Page):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
                 csv_data_container,
 
-                ft.Divider(),  
-
-                csv_file_path,
-                ft.Row([pick_csv_bt, load_csv_bt],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
-                csv_data_container,
+                # Button to save data to CSV
+                save_button, read_button, table_container,
                 
                 ], scroll=ft.ScrollMode.AUTO,alignment=ft.MainAxisAlignment.START),
             #bgcolor=ft.colors.BROWN_400,

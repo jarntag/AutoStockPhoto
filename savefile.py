@@ -75,9 +75,9 @@ def main(page: Page):
                 ElevatedButton(
                     "Save file",
                     icon=icons.SAVE,
-                    on_click=lambda _: save_file_dialog.save_file(file_name="metadata",
+                    on_click=lambda _: save_file_dialog.save_file(file_name="metadata.csv",
                     initial_directory="uploads",file_type=FilePickerFileType.CUSTOM,
-                    allowed_extensions=["txt"]),
+                    allowed_extensions=["csv"]),
                     disabled=page.web,
                     
                 ),

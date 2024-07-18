@@ -83,10 +83,6 @@ main_keywords = ft.TextField(
 csv_file_path = ft.TextField(label="CSV File Path"
 )
 
-
-
-
-
 image_title = ft.TextField(label="Title")
 image_metadata = ft.Text("Metadata")
 image_keywords = ft.TextField(
@@ -108,6 +104,7 @@ categories_select=ft.Dropdown(
 )
 
 progress_bar = ft.ProgressBar(value=0)
+csv_data_container = ft.Column()
 main_prompt_list = ['Africa', 'Algeria', 'Angola', 'Benin',]
 keywords_list = []
 images_select_list = []
@@ -163,7 +160,7 @@ def main(page: ft.Page):
     
 
     # Container to hold image components
-    csv_data_container = ft.Column()
+    
     
     #Function \\\\\\\\\\
 
@@ -176,6 +173,7 @@ def main(page: ft.Page):
         cleaned_string = main_prompt.value.replace("\n", ",").replace(", ", ",").strip(",")
         main_prompt_list = [promptst.strip() for promptst in cleaned_string.split(",") if promptst.strip()]
         total_prompt = len(main_prompt_list)
+
         keywords_list = main_keywords.value.replace("\n", "; ").replace(",", "; ").split("; ")
 
         for i, prompt in enumerate(main_prompt_list):
@@ -185,23 +183,18 @@ def main(page: ft.Page):
 
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
-                prompt_Pre=prompt.replace("\n", " ").replace("'", "")
+                prompt=prompt.replace("\n", " ").replace("'", "")
                 title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
 
-                prompt_key= prompt.lower().split()
-                # Remove any trailing punctuation from words
-                prompt_key = [word.rstrip('.,!?') for word in prompt_key]
-                # Remove words with fewer than 2 letters
-                prompt_key = [word for word in prompt_key if len(word) > 2]
-                # Remove duplicates while maintaining order
-                seen = set()
+                # Prepare prompt key
+                prompt_words = [word.rstrip('.,!?') for word in prompt.lower().split() if len(word) > 2]
                 unique_words = []
-                for word in prompt_key:
+                seen = set()
+                for word in prompt_words:
                     if word not in seen:
                         unique_words.append(word)
                         seen.add(word)
-                # Join the words with commas and add a trailing comma
-                prompt_keyp = ', '.join(unique_words) 
+                prompt_keyp = ', '.join(unique_words)
 
                 keywords = f"{prompt}; {enhance_prompt.value}; {'; '.join(keywords_list)};" " "
 
@@ -316,7 +309,6 @@ def main(page: ft.Page):
         page.update()
         return card
     
-
     # FilePicker dialog to select a directory
     def get_directory_result(e: ft.FilePickerResultEvent):
         if e.path:
@@ -433,7 +425,7 @@ def main(page: ft.Page):
         on_click=lambda _: embed_metadata(),
     )
 
-    mainprompt_bt=ft.ElevatedButton("Load txt data",
+    mainprompt_bt=ft.ElevatedButton("Load Prompt txt data",
         icon=ft.icons.UPLOAD_FILE,
         on_click=lambda _: get_txt_main.pick_files(
             allow_multiple=True,
