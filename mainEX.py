@@ -16,6 +16,8 @@ data = [
 
 ]
 
+adobe_categories=()
+
 # Container to hold image components
 
 image_grid = ft.ListView( 
@@ -141,7 +143,7 @@ def chip_select():
 
 prompt_to_Keywords=ft.Chip(label=ft.Text("Promt to Keyword"),on_select=chip_select, selected=False)
 split_prompt_to_Keywords=ft.Chip(label=ft.Text("Split Promt"),on_select=chip_select, selected=False)
-split_num=ft.Dropdown(
+categories_main=ft.Dropdown(
         width=64,
         value=1,
         options=[
@@ -189,7 +191,7 @@ def main(page: ft.Page):
         main_prompt_list = [promptst.strip() for promptst in cleaned_string.split(",") if promptst.strip()]
         total_prompt = len(main_prompt_list)
 
-        keywords_list = main_keywords.value.replace("\n", "; ").replace(",", "; ").split("; ")
+        keywords_list = main_keywords.value.replace("\n", ", ").replace(", ", ",").split(",")
 
         all_data = []  # List to store all data
 
@@ -200,26 +202,31 @@ def main(page: ft.Page):
 
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
-                prompt=prompt.replace("\n", " ").replace("'", "")
+
                 title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
+                prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key
                 prompt_words = [word.rstrip('.,!?') for word in prompt.lower().split() if len(word) > 2]
+
+                # Initialize seen set with the correct syntax
+                seen = {'the', 'out', 'up', 'with'}
+                seen.update(keywords_list)
                 unique_words = []
-                seen = set()
+
                 for word in prompt_words:
                     if word not in seen:
                         unique_words.append(word)
                         seen.add(word)
                 prompt_keyp = ', '.join(unique_words)
 
-                keywords = f"{prompt}; {enhance_prompt.value}; {'; '.join(keywords_list)};"
+                keywords = f"{prompt_keyp}, {', '.join(keywords_list)},".rstrip(', ')
 
                 data = {
                     "Filename": image_file,
                     "Title": title,
                     "Keywords": keywords,
-                    "Category": None,
+                    "Category": 12,
                     "Releases": None,
                 }
 
@@ -551,9 +558,7 @@ def main(page: ft.Page):
                 ft.Row([mainprompt_bt,],
                     alignment=ft.MainAxisAlignment.END,),
                 ft.Row([prompt_to_Keywords,
-                        split_prompt_to_Keywords,
-                        split_num,
-                        ],
+                        split_prompt_to_Keywords,],
                     alignment=ft.MainAxisAlignment.END,
                 ),
                 

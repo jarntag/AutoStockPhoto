@@ -16,6 +16,8 @@ data = [
 
 ]
 
+adobe_categories=()
+
 # Container to hold image components
 
 image_grid = ft.ListView( 
@@ -141,7 +143,7 @@ def chip_select():
 
 prompt_to_Keywords=ft.Chip(label=ft.Text("Promt to Keyword"),on_select=chip_select, selected=False)
 split_prompt_to_Keywords=ft.Chip(label=ft.Text("Split Promt"),on_select=chip_select, selected=False)
-split_num=ft.Dropdown(
+categories_main=ft.Dropdown(
         width=64,
         value=1,
         options=[
@@ -200,8 +202,9 @@ def main(page: ft.Page):
 
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
-                prompt=prompt.replace("\n", " ").replace("'", "")
+
                 title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
+                prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key
                 prompt_words = [word.rstrip('.,!?') for word in prompt.lower().split() if len(word) > 2]
@@ -498,47 +501,84 @@ def main(page: ft.Page):
      # Container to hold the table
     table_container = ft.Column()
 
+    tabs_main = ft.Tabs(
+        selected_index=0,
+        animation_duration=300,
+        tabs=[
+            ft.Tab(
+                text="Images Metadata",
+                icon=ft.icons.DATASET_OUTLINED,
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            directory_path,
+                            image_count_label, 
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        progress_bar,
+                        ft.Row([
+                            ft.ResponsiveRow([
+                                ft.Row(controls=[
+                                main_container,
+                                ft.GestureDetector(content=
+                                    ft.VerticalDivider(),
+                                    drag_interval=10,
+                                    on_pan_update=move_vertical_divider,
+                                    on_hover=show_draggable_cursor,
+                                ),
+                                right_container,
+                                ],
+                                spacing=0,
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                ) ],
+                                spacing=10,
+                                expand=True,
+                            )],
+                            spacing=10,
+                            expand=True,
+                        ),
+                        image_metadata,             
+                        image_title,
+                        image_keywords,
+                        ft.Row([]),   
+                    ]),
+                    alignment=ft.alignment.top_left
+                ),
+            ),
+            ft.Tab(
+                text="Images Edit",
+                icon=ft.icons.IMAGE_SEARCH,
+                
+                content=ft.Text("This is Tab 2"),
+            ),
+            ft.Tab(
+                text="Re-Upload batch",
+                icon=ft.icons.BATCH_PREDICTION,
+                content=ft.Text("This is Tab 3"),
+            ),
+            ft.Tab(
+                text="Setting",
+                icon=ft.icons.SETTINGS,
+                content=ft.Text("This is Tab 4"),
+            ),
+        ],
+        expand=1,
+        tab_alignment=ft.TabAlignment.FILL,
+    )
+
     # hide all dialogs in overlay
     page.overlay.extend([pick_files_dialog, get_directory_dialog, get_txt_main])
 
 
     # UI setup
     page.add(
-        ft.Row([
-            directory_path,
-            image_count_label, 
-            ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        ),
-        progress_bar,
-        ft.Row([
-            ft.ResponsiveRow([
-                ft.Row(controls=[
-                main_container,
-                ft.GestureDetector(content=
-                    ft.VerticalDivider(),
-                    drag_interval=10,
-                    on_pan_update=move_vertical_divider,
-                    on_hover=show_draggable_cursor,
-                ),
-                right_container,
-                ],
-                spacing=0,
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                ) ],
-                spacing=10,
-                expand=True,
-            ), 
-        ],
-        spacing=10,
-        expand=True,
-        ), 
+        tabs_main,
+        
+        
 
 
-        image_metadata,             
-        image_title,
-        image_keywords,
-        ft.Row([]),        
+             
     )
 
     right_content.controls.append(
@@ -555,9 +595,7 @@ def main(page: ft.Page):
                 ft.Row([mainprompt_bt,],
                     alignment=ft.MainAxisAlignment.END,),
                 ft.Row([prompt_to_Keywords,
-                        split_prompt_to_Keywords,
-                        split_num,
-                        ],
+                        split_prompt_to_Keywords,],
                     alignment=ft.MainAxisAlignment.END,
                 ),
                 
