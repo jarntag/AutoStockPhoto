@@ -100,7 +100,7 @@ enhance_prompt = ft.TextField(
 )
 subfix_prompt = ft.TextField(
     label="Subfix prompt", 
-    value=", ultra realistic, candid, social media, avatar image, plain solid background",
+    value="",
     min_lines=1,
     max_lines=2, 
     multiline=True,
@@ -108,7 +108,7 @@ subfix_prompt = ft.TextField(
 )
 main_keywords = ft.TextField(
     label="Keywords", 
-    value="line1\nline2",
+    value="",
     min_lines=2,
     max_lines=5, 
     multiline=True,
@@ -201,8 +201,12 @@ def save_to_csv(e):
 
 # main function
 def main(page: ft.Page):
+    page.title = "AutoStockPhoto"
+
     page.window_width = 1000
     page.window_height = 1000
+
+    #page.theme = ft.Theme(color_scheme_seed='green')
     
     def on_change(event):
         print("Selected category:", category_dropdown.value(index))
@@ -214,9 +218,8 @@ def main(page: ft.Page):
         images = sorted([f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
         num = int(images_per_prompt.value)
         process_count = 0  # Initialize image count
-        selected_index_g=""
-        cleaned_string = main_prompt.value.replace("\n", ",").replace(", ", ",").strip(",")
-        main_prompt_list = [promptst.strip() for promptst in cleaned_string.split(",") if promptst.strip()]
+
+        main_prompt_list = [line.strip() for line in main_prompt.value.strip().split('\n') if line.strip()]
         total_prompt = len(main_prompt_list)
 
         keywords_list = main_keywords.value.replace("\n", ", ").replace(", ", ",").split(",")
@@ -277,7 +280,7 @@ def main(page: ft.Page):
         df.to_csv(csv_file_path, index=False)
         print(f"CSV file saved in folder: {csv_file_path}")
 
-        print(keywords_list)
+        print(main_prompt_list,len(main_prompt_list))
         image_count_label.value = f"Total process Images: {process_count}"
         image_count_label.update()
     # ... (rest of the code)
@@ -422,7 +425,7 @@ def main(page: ft.Page):
             try:
                 with open(file_path, 'r') as file:
                     content = file.read()
-                    processed_data = content.replace("\n", ",")
+                    processed_data = content
                     main_prompt.value = processed_data
                     page.update()  # Update the page to reflect the changes
             except Exception as ex:
