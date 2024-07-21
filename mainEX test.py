@@ -195,8 +195,8 @@ def save_to_csv(e):
 def main(page: ft.Page):
     page.title = "AutoStockPhoto"
 
-    page.window_width = 1000
-    page.window_height = 1000
+    ft.Page.window_width = 1000
+    ft.Page.window_height = 1000
 
     #page.theme = ft.Theme(color_scheme_seed='green')
     
@@ -393,7 +393,7 @@ def main(page: ft.Page):
                 
 
                 category = image_metadata.get('Category')
-                if category is 0:
+                if category == 0:
                     selected_category = "Selected Category"
                 else:
                     selected_category = adobe_categories[int(image_metadata.get('Category', '')) - 1]
