@@ -56,7 +56,7 @@ main_container = ft.Container(
     #bgcolor=ft.colors.ORANGE_300,
     alignment=ft.alignment.center,
     width=800,
-    expand=True,      
+    expand=True,
 )
 right_content = ft.Row([],spacing=10,expand=True,
 )
@@ -119,7 +119,7 @@ csv_file_path = ft.TextField(label="CSV File Path"
 )
 
 image_title = ft.TextField(label="Title")
-image_metadata = ft.Text("Metadata")
+
 image_keywords = ft.TextField(
     label="Keywords", 
     value="",
@@ -128,15 +128,7 @@ image_keywords = ft.TextField(
     multiline=True,
     color=ft.colors.BLUE_700,
 )
-categories_select=ft.Dropdown(
-    on_change=print(),
-    options=[
-        ft.dropdown.Option("Red"),
-        ft.dropdown.Option("Green"),
-        ft.dropdown.Option("Blue"),
-    ],
-    width=200,
-)
+image_releases = ft.Text("releases")
 
 progress_bar = ft.ProgressBar(
     value=0,
@@ -291,12 +283,51 @@ def main(page: ft.Page):
     def extract_csv(image_path):
         
         return None, None
+    
+    # Function to read CSV and return metadata
+    def read_csv(directory):
+        # Extract folder name from directory path
+        folder_name = os.path.basename(os.path.normpath(directory))
+        # Save all data to CSV file with folder name as the file name
+        csv_file_path = os.path.join(directory, f"{folder_name}.csv")
+        try:
+            df = pd.read_csv(csv_file_path)
+            metadata_list = df.to_dict(orient='records')
+            return metadata_list
+        except FileNotFoundError:
+            print(f"File '{csv_file_path}' not found. Creating a new file.")
+            # Create a new empty DataFrame with specified columns and save it as a CSV file
+            all_data = []  # List to store all data
+            images = sorted([f for f in os.listdir(directory) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
+            for image in images:
+                data = {
+                    "Filename": image,
+                    "Title": "",
+                    "Keywords": "",
+                    "Category": 0,
+                    "Releases": "",
+                }
+                all_data.append(data)  # Append new data to the list
+            df = pd.DataFrame(all_data)
+            df.to_csv(csv_file_path, index=False)
+            df = pd.read_csv(csv_file_path)
+            metadata_list = df.to_dict(orient='records')
+            return metadata_list
             
     # Function to list and display images in a directory
     def list_images(directory):
         image_container.controls.clear()  # Clear previous images
         image_count = 0  # Initialize image count
         card = ft.Card()
+
+        # Extract folder name from directory path
+        folder_name = os.path.basename(os.path.normpath(directory))
+
+        
+        # Save all data to CSV file with folder name as the file name
+        csv_file_path = os.path.join(directory, f"{folder_name}.csv")
+        metadata = read_csv(directory)
+        
 
         def change_color(e, card, filename):
             if card.color == ft.colors.BLUE:
@@ -319,6 +350,8 @@ def main(page: ft.Page):
             if filename.lower().endswith(('.jpg', '.png', '.svg')):
                 image_path = os.path.join(directory, filename)
                 image_container.controls.append(ft.Text(f"filename : {filename}",),)
+                image_metadata = next((item for item in metadata if item['Filename'] == filename), {})
+
                 card = ft.Card(content=
                     ft.Container(content=
                         ft.Stack([
@@ -327,8 +360,8 @@ def main(page: ft.Page):
                                 border_radius=ft.border_radius.all(0),
                                 tooltip=filename,
                                 fit=ft.ImageFit.COVER,
-                                width=150,
-                                height=150,
+                                width=100,
+                                height=100,
                             ),
                             ft.Container(content=
                                 ft.Container(content=         
@@ -353,35 +386,44 @@ def main(page: ft.Page):
                         ]),margin=3,
                     ),shape=ft.RoundedRectangleBorder(radius=0),
                     margin=0,color = ft.colors.GREY_50,
-                    width=150, height=150,
+                    width=100, height=100,
                 )
                 # Now set the on_click handler
                 card.content.content.controls[2].on_click = lambda e, card=card, image_path=image_path, filename=filename: handle_click(e, card, image_path, filename)
+                
+
+                category = image_metadata.get('Category')
+                if category is 0:
+                    selected_category = "Selected Category"
+                else:
+                    selected_category = adobe_categories[int(image_metadata.get('Category', '')) - 1]
+
+                print(image_metadata)
+                    
+
                 right_con=ft.Column([
+                    
                     ft.Dropdown(
-                        label="Categories",
-                        hint_text="Choose Categories",
-                        options=[
-                            ft.dropdown.Option("1. Animals"),
-                            ft.dropdown.Option("2. Buildings and Architecture"),
-                            ft.dropdown.Option("3. Business"),
-                            ft.dropdown.Option("4. Drinks"),
-                            ft.dropdown.Option("5. The Environment"),
-                            ft.dropdown.Option("6. States of Mind"),
+                        label=None,
+                        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
+                        hint_text=f"{image_metadata.get('Category', '')} : {selected_category}",
+                        on_change=on_change_category_dropdown
+                    ),
+                   
+                    ft.TextField(label=(f"{image_metadata.get('Title', '')}")),
+                    ft.TextField(
+                        label="Keywords", 
+                        value=(f"{image_metadata.get('Keywords', '')}"),
+                        min_lines=2,
+                        max_lines=3, 
+                        multiline=True,
+                        color=ft.colors.BLUE_700,
+                    ),
+                    ft.Text((f"Releases : {image_metadata.get('Releases', '')}")),
+
                         ],
-                    ),
-                    ft.CupertinoTextField(
-                        placeholder_text="Title",
-                    ),
-                    ft.CupertinoTextField(
-                        placeholder_text="Keywords",
-                    ),
-                    ft.CupertinoTextField(
-                        placeholder_text="Releases",
-                    ),
-                    ],
-                    expand=True,
-                )
+                        expand=True,
+                    )
                 row_con=ft.Row([
                     card,
                     right_con,
@@ -391,9 +433,9 @@ def main(page: ft.Page):
                     expand=True,
                 )
 
-                image_container.controls.append(row_con)
-                image_container.controls.append(ft.Divider(height=9,),)
-                image_count += 1  # Increment image count
+            image_container.controls.append(row_con)
+            image_container.controls.append(ft.Divider(height=9,),)
+            image_count += 1  # Increment image count
         
         # Update the label with the image count
         image_count_label.value = f"Total Images: {image_count}"
@@ -435,25 +477,6 @@ def main(page: ft.Page):
 
     get_txt_main = ft.FilePicker(on_result=get_txt_result)
 
-
-    # Function to read data from CSV
-    def read_csv(e):
-        df = pd.read_csv(save_path)
-        
-        # Create table headers
-        columns = [ft.DataColumn(ft.Text(col)) for col in df.columns]
-        
-        # Create table rows
-        rows = []
-        for _, row in df.iterrows():
-            cells = [ft.DataCell(ft.Text(str(cell))) for cell in row]
-            rows.append(ft.DataRow(cells))
-        
-        # Create DataTable and add it to the page
-        table = ft.DataTable(columns=columns, rows=rows)
-        table_container.controls.clear()
-        table_container.controls.append(table)
-        page.update()
 
     # FilePicker dialog to select a directory
     def image_metadata_Process(e):
@@ -532,18 +555,26 @@ def main(page: ft.Page):
 
     # Create dropdown menu for categories
     def on_change_category_dropdown(event):
+        event.control.label=""
         global selected_index
         selected_index = int(event.control.value.split(" : ")[0]) - 1  # Adjust to zero-indexed
+        event.control.label="Selected Category"
         selected_category = adobe_categories[selected_index]
         print("Selected category:", selected_category)
         print(f"Selected category: {selected_category} (Index: {selected_index})")
-
+        
         page.update()  # Ensure the page updates if necessary
 
         return selected_index
 
     category_dropdown = ft.Dropdown(
         label="Select Category",
+        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
+        on_change=on_change_category_dropdown
+    )
+
+    image_categories_dropdown = ft.Dropdown(
+        label=None,
         options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
         on_change=on_change_category_dropdown
     )
