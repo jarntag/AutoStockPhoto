@@ -1,56 +1,61 @@
 import flet as ft
 import pandas as pd
 import os
+import configparser
 
-# Path to save the CSV file
-save_path = 'save/sample_images.csv'
-# Sample data to be added
-data = [
-    {
-        "Filename": "image1.jpg",
-        "Title": "Beautiful Sunset",
-        "Keywords": "sunset, nature, beauty",
-        "Category": "Nature",
-        "Releases": "2024-07-18"
-    },
+class ImageCard(ft.Column):
+    def __init__(self, image_path, title, keywords):
+        super().__init__(
+            spacing=10,
+            children=[
+                ft.Image(src=image_path, width=100, height=100),
+                ft.Text(title, bold=True),
+                ft.TextField(value=keywords, label="Keywords"),
+            ]
+        )
 
-]
+def serialize_image_data(image_data):
+    """Convert a list of dictionaries to a serialized string format."""
+    return '|'.join([f"{key}:{value}" for key, value in image_data.items()])
 
-adobe_categories = [
-    "Animals",
-    "Buildings and Architecture",
-    "Business",
-    "Drinks",
-    "The Environment",
-    "States of Mind",
-    "Food",
-    "Graphic Resources",
-    "Hobbies and Leisure",
-    "Industry",
-    "Landscape",
-    "Lifestyle",
-    "People",
-    "Plants and Flowers",
-    "Culture and Religion",
-    "Science",
-    "Social Issues",
-    "Sports",
-    "Technology",
-    "Transport",
-    "Travel"
-]
+def deserialize_image_data(data_str):
+    """Convert a serialized string format back to a list of dictionaries."""
+    return {item.split(':')[0]: item.split(':')[1] for item in data_str.split('|')}
+
+def convert_to_list(categories_str):
+    """Convert a comma-separated string to a list."""
+    return [item.strip() for item in categories_str.split(',')]
+
+def convert_to_string(categories_list):
+    """Convert a list to a comma-separated string."""
+    return ', '.join(categories_list)
+
+# Load configuration data
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# Access data from the DEFAULT section
+app_theme = config['USER'].get('Theme', 'LIGHT')
+save_path = config['USER'].get('SavePath', 'default/path')
+images_per_prompt = config['USER'].get('ImagesPerPrompt', '2')
+prefix_prompt = config['USER'].get('PrefixPrompt', '')
+main_prompt = config['USER'].get('MainPrompt', '')
+subfix_prompt = config['USER'].get('SubfixPrompt', '')
+main_keywords = config['USER'].get('MainKeywords', '')
+default_categories = config['USER'].get('SelectCategories', '')
+adobe_categories_str = config['USER'].get('AdobeCategories', '')
+adobe_categories_list = convert_to_list(adobe_categories_str)
+image_data_str = config['USER'].get('ImageData', '')
+image_data = deserialize_image_data(image_data_str)
+
+
+selected_index = int(default_categories)
 
 # Container to hold image components
 
-image_grid = ft.ListView( 
-
-    spacing=10,
-)
+image_grid = ft.ListView(spacing=10,)
 image_data = ""
-image_container = ft.ListView( 
-
-    spacing=10,
-)
+image_container = ft.ListView(spacing=10,)
 main_container = ft.Container(
     content=image_container,
     #bgcolor=ft.colors.ORANGE_300,
@@ -69,51 +74,7 @@ right_container = ft.Container(
 )
 
 image_count_label = ft.Text(value="")
-directory_path = ft.Text("Select images directory path first!")
-images_per_prompt = ft.TextField(
-    label="images per prompt", 
-    value="4",
-)
-prefix_prompt = ft.TextField(
-    label="Prefix prompt",
-    value="",
-    min_lines=1,max_lines=2,
-    multiline=True,
-    color=ft.colors.BLUE_700,
-)
-main_prompt = ft.TextField(
-    label="Main prompt matrix List", 
-    value="",
-    min_lines=1,
-    max_lines=5, 
-    multiline=True,
-    color=ft.colors.BLUE_700,
-)
-
-enhance_prompt = ft.TextField(
-    label="Enhance prompt matrix List", 
-    value="",
-    min_lines=1,
-    max_lines=2, 
-    multiline=True,
-    color=ft.colors.BLUE_700,
-)
-subfix_prompt = ft.TextField(
-    label="Subfix prompt", 
-    value="",
-    min_lines=1,
-    max_lines=2, 
-    multiline=True,
-    color=ft.colors.BLUE_700,
-)
-main_keywords = ft.TextField(
-    label="Keywords", 
-    value="",
-    min_lines=2,
-    max_lines=5, 
-    multiline=True,
-    color=ft.colors.BLUE_700,
-)
+directory_path = ft.Text("Select images directory path first!", expand=True,)
 
 csv_file_path = ft.TextField(label="CSV File Path"
 )
@@ -136,7 +97,7 @@ progress_bar = ft.ProgressBar(
 csv_data_container = ft.Column()
 
 
-main_prompt_list = ['Africa', 'Algeria', 'Angola', 'Benin',]
+main_prompt_list = []
 keywords_list = []
 images_select_list = []
 
@@ -161,15 +122,7 @@ def chip_select():
 
 prompt_to_Keywords=ft.Chip(label=ft.Text("Promt to Keyword"),on_select=chip_select, selected=False)
 split_prompt_to_Keywords=ft.Chip(label=ft.Text("Split Promt"),on_select=chip_select, selected=False)
-categories_main=ft.Dropdown(
-        width=64,
-        value=1,
-        options=[
-            ft.dropdown.Option("1"),
-            ft.dropdown.Option("2"),
-            ft.dropdown.Option("3"),
-        ],
-    )
+
 
 async def move_vertical_divider(e: ft.DragUpdateEvent):
     new_width = main_container.width + e.delta_x
@@ -185,7 +138,7 @@ async def show_draggable_cursor(e: ft.HoverEvent):
 
 # Function to save data to CSV
 def save_to_csv(e):
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(image_data)
     df.to_csv(save_path, index=False)
     print(f"CSV file created and saved at {save_path}")
 
@@ -194,27 +147,124 @@ def save_to_csv(e):
 # main function
 def main(page: ft.Page):
     page.title = "AutoStockPhoto"
-
+    # Initial theme mode
+    
     ft.Page.window_width = 1000
     ft.Page.window_height = 1000
-
-    #page.theme = ft.Theme(color_scheme_seed='green')
     
-    def on_change(event):
-        print("Selected category:", category_dropdown.value(index))
+    global theme_switch, save_path_field, images_per_prompt_field, prefix_prompt_field
+    global main_prompt_field, subfix_prompt_field, main_keywords_field
+    global adobe_categories_field
 
+    def on_click(e, click_message):
+        page.snack_bar = ft.SnackBar(ft.Text(click_message))
+        page.snack_bar.open = True
+        
+        #page.overlay.append(ft.SnackBar(ft.Text(click_message)))
+        page.update()
+
+    # Function to save user data
+    def save_user_data(e, click_message):
+        config['USER'] = {
+            'Theme': ("LIGHT" if page.theme_mode == ft.ThemeMode.LIGHT else "DARK"),
+            'SavePath': save_path,
+            'ImagesPerPrompt': images_per_prompt_field.value,
+            'PrefixPrompt': prefix_prompt_field.value,
+            'MainPrompt': main_prompt_field.value,
+            'SubfixPrompt': subfix_prompt_field.value,
+            'MainKeywords': main_keywords_field.value,
+            'SelectCategories': selected_index,
+            'AdobeCategories': convert_to_string([adobe_categories_field.value]),
+            'ImageData': image_data_str,
+        }
+
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+            
+        on_click(e, click_message)
+        
+    # Function to be called on app close
+    def on_close(event):
+        print("App is closing...")
+        save_user_data()
+
+    # Create TextFields for each config item
+    
+
+    save_path_field = ft.TextField(label="Save Path", 
+                                    value=save_path,
+                                    prefix_icon=ft.icons.FOLDER_OPEN,
+                                    hint_text="Type your save path",
+                                    color=ft.colors.BLUE_700,
+                                    )
+    images_per_prompt_field = ft.TextField(label="image per prompt", 
+                                            value=images_per_prompt,
+                                            prefix_icon=ft.icons.BURST_MODE,
+                                            color=ft.colors.BLUE_700,
+                                            
+                                            )
+    prefix_prompt_field = ft.TextField(label="Prefix Prompt", 
+                                        value=prefix_prompt,
+                                        color=ft.colors.BLUE_700,
+                                        prefix_icon=ft.icons.TEXT_FIELDS,
+                                        counter_text="Title = prefix + main + subfix prompt",)
+    main_prompt_field = ft.TextField(label="Main prompt matrix List", 
+                                    value=main_prompt,
+                                    min_lines=1,
+                                    max_lines=5, 
+                                    multiline=True,
+                                    color=ft.colors.BLUE_700,
+                                    prefix_icon=ft.icons.TEXT_FIELDS,
+                                    counter_text="Separate each prompt with , or new line",)
+    subfix_prompt_field = ft.TextField(label="Subfix Prompt", 
+                                        value=subfix_prompt,
+                                        color=ft.colors.BLUE_700,
+                                        prefix_icon=ft.icons.TEXT_FIELDS,
+                                        counter_text="0 totle Title symbols typed",)
+    main_keywords_field = ft.TextField(label="Main Keywords", 
+                                        value=main_keywords,
+                                        min_lines=1,
+                                        max_lines=5, 
+                                        multiline=True,
+                                        color=ft.colors.BLUE_700,
+                                        prefix_icon=ft.icons.SELL,
+                                        helper_text="Separate each keywords with , or new line",
+                                        counter_text="0 keywords",)
+    adobe_categories_field = ft.TextField(label="Adobe Categories", value=adobe_categories_str)
+
+
+    # Create Save Button
+    save_button_config = ft.ElevatedButton(text="Save", on_click=lambda e: save_user_data(e, "Data saved successfully!"))
+
+    def toggle_theme(e):
+        page.theme_mode = (ft.ThemeMode.DARK if page.theme_mode == ft.ThemeMode.LIGHT else ft.ThemeMode.LIGHT)
+        theme_switch.label = (" Light Theme : " if page.theme_mode == ft.ThemeMode.LIGHT else " Dark Theme : ")
+        theme_icon.name = (ft.icons.LIGHT_MODE if page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.DARK_MODE)
+        page.update()
+    
+    if app_theme.upper() == 'LIGHT':
+        page.theme_mode = ft.ThemeMode.LIGHT
+    elif app_theme.upper() == 'DARK':
+        page.theme_mode = ft.ThemeMode.DARK
+
+    theme_switch = ft.Switch(label=(" Light theme : " if page.theme_mode == ft.ThemeMode.LIGHT else " Dark theme : "), 
+                            value=(True if page.theme_mode == ft.ThemeMode.LIGHT else False),
+                            label_position=ft.LabelPosition.LEFT,
+                            on_change=toggle_theme)
+    theme_icon = ft.Icon(name=(ft.icons.LIGHT_MODE if page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.DARK_MODE),
+                         )
     #Function \\\\\\\\\\
 
     def embed_metadata():
         path=directory_path.value
         images = sorted([f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
-        num = int(images_per_prompt.value)
+        num = int(images_per_prompt_field.value)
         process_count = 0  # Initialize image count
 
-        main_prompt_list = [line.strip() for line in main_prompt.value.strip().split('\n') if line.strip()]
+        main_prompt_list = [line.strip() for line in main_prompt_field.value.strip().split('\n') if line.strip()]
         total_prompt = len(main_prompt_list)
 
-        keywords_list = main_keywords.value.replace("\n", ", ").replace(", ", ",").split(",")
+        keywords_list = main_keywords_field.value.replace("\n", ", ").replace(", ", ",").split(",")
 
         all_data = []  # List to store all data
 
@@ -226,7 +276,7 @@ def main(page: ft.Page):
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
 
-                title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
+                title = f"{prefix_prompt_field.value} {prompt} {subfix_prompt_field.value}"
                 prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key
@@ -249,14 +299,14 @@ def main(page: ft.Page):
                     "Filename": image_file,
                     "Title": title,
                     "Keywords": keywords,
-                    "Category": selected_index+1,
+                    "Category": selected_index,
                     "Releases": None,
                 }
 
                 all_data.append(data)  # Append new data to the list
 
                 process_count += 1
-                image_count_label.value = f"Total process Images: {process_count}"
+                image_count_label.value = f"Total process Images : {process_count}"
                 image_count_label.update()
                 
                 progress_bar.value = process_count/(total_prompt*num)
@@ -273,12 +323,12 @@ def main(page: ft.Page):
         print(f"CSV file saved in folder: {csv_file_path}")
 
         print(main_prompt_list,len(main_prompt_list))
-        image_count_label.value = f"Total process Images: {process_count}"
+        image_count_label.value = f"Total process Images : {process_count}"
         image_count_label.update()
     # ... (rest of the code)
 
     # Create a DataFrame from the data
-    df = pd.DataFrame(data) 
+    df = pd.DataFrame([image_data]) 
 
     def extract_csv(image_path):
         
@@ -319,16 +369,8 @@ def main(page: ft.Page):
         image_container.controls.clear()  # Clear previous images
         image_count = 0  # Initialize image count
         card = ft.Card()
-
-        # Extract folder name from directory path
-        folder_name = os.path.basename(os.path.normpath(directory))
-
-        
-        # Save all data to CSV file with folder name as the file name
-        csv_file_path = os.path.join(directory, f"{folder_name}.csv")
         metadata = read_csv(directory)
         
-
         def change_color(e, card, filename):
             if card.color == ft.colors.BLUE:
                 card.color = ft.colors.GREY_50
@@ -391,13 +433,13 @@ def main(page: ft.Page):
                 # Now set the on_click handler
                 card.content.content.controls[2].on_click = lambda e, card=card, image_path=image_path, filename=filename: handle_click(e, card, image_path, filename)
                 
-
                 category = image_metadata.get('Category')
-                if category == 0:
-                    selected_category = "Selected Category"
-                else:
-                    selected_category = adobe_categories[int(image_metadata.get('Category', '')) - 1]
 
+                if category is not None and category > 0:
+                    image_category = adobe_categories_list[int(category) - 1]
+                else:
+                    image_category = "Selected Category"
+                                    
                 print(image_metadata)
                     
 
@@ -405,8 +447,8 @@ def main(page: ft.Page):
                     
                     ft.Dropdown(
                         label=None,
-                        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
-                        hint_text=f"{image_metadata.get('Category', '')} : {selected_category}",
+                        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories_list)],
+                        hint_text=f"{image_metadata.get('Category', '')} : {image_category}",
                         on_change=on_change_category_dropdown
                     ),
                    
@@ -433,12 +475,12 @@ def main(page: ft.Page):
                     expand=True,
                 )
 
-            image_container.controls.append(row_con)
-            image_container.controls.append(ft.Divider(height=9,),)
-            image_count += 1  # Increment image count
+                image_container.controls.append(row_con)
+                image_container.controls.append(ft.Divider(height=9,),)
+                image_count += 1  # Increment image count
         
         # Update the label with the image count
-        image_count_label.value = f"Total Images: {image_count}"
+        image_count_label.value = f"Total Images : {image_count} | "
         page.update()
         return card
     
@@ -468,7 +510,7 @@ def main(page: ft.Page):
                 with open(file_path, 'r') as file:
                     content = file.read()
                     processed_data = content
-                    main_prompt.value = processed_data
+                    main_prompt_field.value = processed_data
                     page.update()  # Update the page to reflect the changes
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
@@ -480,8 +522,8 @@ def main(page: ft.Page):
 
     # FilePicker dialog to select a directory
     def image_metadata_Process(e):
-        title = f"{prefix_prompt.value} {main_prompt.value} {enhance_prompt.value}{subfix_prompt.value}"
-        keywords = main_keywords.value.replace("\n", "; ").replace(",", "; ")
+        title = f"{prefix_prompt_field.value} {main_prompt_field.value} {subfix_prompt_field.value}"
+        keywords = main_keywords_field.value.replace("\n", "; ").replace(",", "; ")
         image_title.value = f"{title}"
         image_keywords.value = f"{keywords}"
 
@@ -555,27 +597,26 @@ def main(page: ft.Page):
 
     # Create dropdown menu for categories
     def on_change_category_dropdown(event):
-        event.control.label=""
+        category = event.control.value
         global selected_index
-        selected_index = int(event.control.value.split(" : ")[0]) - 1  # Adjust to zero-indexed
+        selected_index = adobe_categories_list.index(category)+1  # Adjust to zero-indexed
         event.control.label="Selected Category"
-        selected_category = adobe_categories[selected_index]
-        print("Selected category:", selected_category)
-        print(f"Selected category: {selected_category} (Index: {selected_index})")
+        print(f"Selected category: {category} (Index: {selected_index})")
         
         page.update()  # Ensure the page updates if necessary
 
         return selected_index
 
     category_dropdown = ft.Dropdown(
-        label="Select Category",
-        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
-        on_change=on_change_category_dropdown
+        label=(f"{adobe_categories_list[int(selected_index-1)]}" if selected_index is not None and selected_index > 0 else "Selected Category"),
+
+        options=[ft.dropdown.Option(key=f"{category}") for index, category in enumerate(adobe_categories_list)],
+        on_change=on_change_category_dropdown,
     )
 
     image_categories_dropdown = ft.Dropdown(
         label=None,
-        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories)],
+        options=[ft.dropdown.Option(key=f"{index+1} : {category}") for index, category in enumerate(adobe_categories_list)],
         on_change=on_change_category_dropdown
     )
 
@@ -585,16 +626,18 @@ def main(page: ft.Page):
     tabs_main = ft.Tabs(
         selected_index=0,
         animation_duration=300,
+        
         tabs=[
             ft.Tab(
                 text="Images Massive Metadata",
                 icon=ft.icons.DATASET_OUTLINED,
-                content=ft.Container(
+                
                     content=ft.Column([
                         progress_bar,
                         ft.Row([
                             directory_path,
-                            image_count_label, 
+                            image_count_label,
+                            open_directory_bt,
                             ],
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         ),
@@ -625,8 +668,7 @@ def main(page: ft.Page):
                         #image_keywords,
                         ft.Row([]),   
                     ]),
-                    alignment=ft.alignment.top_left
-                ),
+                    
             ),
             ft.Tab(
                 text="Images Edit",
@@ -662,7 +704,7 @@ def main(page: ft.Page):
                             spacing=10,
                             expand=True,
                         ),
-                    ]),
+                    ],),
                 )
             ),
             ft.Tab(
@@ -673,7 +715,29 @@ def main(page: ft.Page):
             ft.Tab(
                 text="Setting",
                 icon=ft.icons.SETTINGS,
-                content=ft.Text("Setting"),
+                content=ft.Container(
+                    content=ft.Column([
+                        progress_bar,
+                        ft.Text("Configuration"),
+                        ft.Row([theme_icon, theme_switch, ]),
+                        
+                        ft.Row([category_dropdown]),
+                        ft.Row([images_per_prompt_field]),
+                        ft.Row([prefix_prompt_field]),
+                        ft.Row([main_prompt_field]),
+                        ft.Row([subfix_prompt_field]),
+                        ft.Row([main_keywords_field]),
+                        ft.Row([save_path_field]),
+                        ft.Row([adobe_categories_field]),
+
+                        save_button_config
+                        
+
+                        ],
+                        scroll=ft.ScrollMode.AUTO,alignment=ft.MainAxisAlignment.START,
+                        expand=True,
+                    )
+                ),
             ),
         ],
         expand=True,
@@ -682,7 +746,9 @@ def main(page: ft.Page):
 
     # hide all dialogs in overlay
     page.overlay.extend([pick_files_dialog, get_directory_dialog, get_txt_main])
-
+    
+    # Register on_close handler
+    page.on_close = on_close
 
     # UI setup
     page.add(
@@ -697,40 +763,33 @@ def main(page: ft.Page):
     right_content.controls.append(
         ft.Container(
             content=ft.Column([
-                #ft.Text("Images"),  
-                ft.Row([check_metadata_bt,open_directory_bt,],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
-                    
-                #ft.Text("Prompt to Title"),
-                category_dropdown,
-                images_per_prompt,
-                prefix_prompt,
-                main_prompt,
+                ft.Row([category_dropdown,images_per_prompt_field,],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    wrap=True,), 
+                prefix_prompt_field,
+                main_prompt_field,
                 ft.Row([mainprompt_bt,],
                     alignment=ft.MainAxisAlignment.END,),
-                ft.Row([prompt_to_Keywords,
-                        split_prompt_to_Keywords,],
-                    alignment=ft.MainAxisAlignment.END,
-                ),
-                
-                enhance_prompt,
-                subfix_prompt,
+                subfix_prompt_field,
                 #ft.Text("Keywords"),
                 # Pick csv files
                 # Load csv data
-                main_keywords,
+                main_keywords_field,
                 ft.Row([ft.ElevatedButton("Test", on_click=image_metadata_Process),embed_metadata_bt, ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,), 
 
                 ft.Divider(),  
-
+                ft.Row([prompt_to_Keywords,
+                    split_prompt_to_Keywords,],
+                    alignment=ft.MainAxisAlignment.END,
+                ),
                 csv_file_path,
                 ft.Row([pick_csv_bt, load_csv_bt],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
                 csv_data_container,
 
                 # Button to save data to CSV
-                save_button, read_button, table_container,
+                save_button, read_button, table_container, check_metadata_bt,
                 
                 ], scroll=ft.ScrollMode.AUTO,alignment=ft.MainAxisAlignment.START),
             #bgcolor=ft.colors.BROWN_400,
@@ -740,5 +799,8 @@ def main(page: ft.Page):
     )
        
     page.update()
+    
+
+    
 
 ft.app(target=main)

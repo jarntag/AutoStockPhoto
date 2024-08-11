@@ -2,6 +2,18 @@ import flet as ft
 import pandas as pd
 import os
 
+
+class ImageCard(ft.Column):
+    def __init__(self, image_path, title, keywords):
+        super().__init__(
+            spacing=10,
+            children=[
+                ft.Image(src=image_path, width=100, height=100),
+                ft.Text(title, bold=True),
+                ft.TextField(value=keywords, label="Keywords"),
+            ]
+        )
+
 # Path to save the CSV file
 save_path = 'save/sample_images.csv'
 # Sample data to be added
@@ -195,8 +207,8 @@ def save_to_csv(e):
 def main(page: ft.Page):
     page.title = "AutoStockPhoto"
 
-    page.window_width = 1000
-    page.window_height = 1000
+    ft.Page.window_width = 1000
+    ft.Page.window_height = 1000
 
     #page.theme = ft.Theme(color_scheme_seed='green')
     
@@ -393,7 +405,7 @@ def main(page: ft.Page):
                 
 
                 category = image_metadata.get('Category')
-                if category is 0:
+                if category == 0:
                     selected_category = "Selected Category"
                 else:
                     selected_category = adobe_categories[int(image_metadata.get('Category', '')) - 1]

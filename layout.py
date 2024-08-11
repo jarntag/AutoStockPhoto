@@ -1,243 +1,230 @@
-import flet as ft
-"""from flet import (
-    ElevatedButton,
-    FilePicker,
-    FilePickerResultEvent,
-    FilePickerUploadEvent,
-    FilePickerUploadFile,
-    FilePickerFileType,
-    Page,
+
+from flet import (
+    UserControl,
+    Column,
+    Container,
+    IconButton,
     Row,
     Text,
-    Image,
-    icons,
-    GridView,
-    ImageFit,
-    ImageRepeat,
-    border_radius,
-    TextField,
-    AppBar,
-    Icon,
-    colors,
     IconButton,
-    PopupMenuButton,
-    PopupMenuItem,
-    ProgressRing,
-    Ref,
-    Column,
-)"""
-import pandas as pd
-import exiftool
-import os
+    NavigationRail,
+    NavigationRailDestination,
+    TextField,
+    alignment,
+    border_radius,
+    colors,
+    icons,
+    padding,
+    margin,
+    TextButton,
+    Page,
+    MainAxisAlignment,
+    ResponsiveRow,
+    GestureDetector,
+    VerticalDivider,
+    DragUpdateEvent,
+    GridView,
+    ListView,
+    HoverEvent,
+    MouseCursor,
+)
+from event_handler import EventHandler
 
-# async def function  \\\\\\\\\\
-# Chip function
-def chip_select():
-    async def amenity_selected(e):
-        await amenity_chips.update_async()
+class AppUi(UserControl):
 
-    title = ft.Row([ft.Icon(ft.icons.HOTEL_CLASS), ft.Text("Amenities")])
-    amenities = ["Washer / Dryer", "Ramp access", "Dogs OK", "Cats OK", "Smoke-free"]
-    amenity_chips = ft.Row()
+    def __init__(self,):
+        super().__init__()
+        images_display = "table"
 
-    for amenity in amenities:
-        amenity_chips.controls.append(
-            ft.Chip(
-                label=ft.Text(amenity),
-                on_select=amenity_selected,
-            )
-        )
-    return ft.Column(controls=[title, amenity_chips])  
-
-# Main page  \\\\\\\\\\
-def main(page: ft.Page):
-
-    # Page config \\\\\\\\\\
-    page.title = "Image Metadata Viewer"
-    page.window_width = 1000
-    page.window_height = 1000
-
-    # Text widget to display the selected directory path
-    directory_path = ft.Text()
-    csv_file_path = ft.TextField(label="CSV File Path",width=400)
-
-    # Container to hold image components
-    image_container = ft.GridView( runs_count=5, max_extent=150,
-        child_aspect_ratio=1.0, spacing=10,)
-    # Define the image container and image count label
-    image_count_label = ft.Text(value="Total Images: 0")
-
-    # Container to hold image components
-    csv_data_container = ft.Column()
-   
-
-    #Function \\\\\\\\\\
-
-    # Function to list and display images in a directory
-    def list_images(directory):
-        image_container.controls.clear()  # Clear previous images
-        image_count = 0  # Initialize image count
-        for filename in os.listdir(directory):
-            if filename.lower().endswith(('.jpg', '.png', '.svg')):
-                image_path = os.path.join(directory, filename)
-                image_component = ft.Stack([
-                    ft.Image(src=image_path, width=150, height=150,
-                        border_radius=ft.border_radius.all(10),tooltip=filename,fit=ft.ImageFit.COVER
-                        ),
-                    ft.Container(
-                    content=ft.CircleAvatar(bgcolor=ft.colors.GREEN, radius=5),
-                    alignment=ft.alignment.bottom_left,margin=5,
-                        ),
-                    ft.Container(
-                    content=ft.TextField(label="Standard"),
-                    alignment=ft.alignment.bottom_left,margin=5,
-                        ),    
-                ],)
-                image_container.controls.append(image_component)
-                image_count += 1  # Increment image count
+        self.top_menu_open_btt = TextButton("Open Directory", icon=icons.SETTINGS_OUTLINED)
+        self.top_menu_stat_txt = Text("stat",)
+        self.top_menu_path_txt = Text("path",)
+        self.top_menu_row = Row([
+            self.top_menu_path_txt, 
+            self.top_menu_stat_txt, 
+            self.top_menu_open_btt], 
+            spacing=0, alignment=MainAxisAlignment.SPACE_BETWEEN,)
         
-        # Update the label with the image count
-        image_count_label.value = f"Total Images: {image_count}"
-        page.update()
+        self.select_all_btt = IconButton(
+            icon=icons.CHECK_BOX_OUTLINED,
+            tooltip="Select All",
+            on_click=lambda _: EventHandler.select_all())
+        
+        self.table_view_btt = IconButton(
+            icon=(icons.TABLE_ROWS if images_display == "table" else icons.TABLE_ROWS_OUTLINED),
+            tooltip="Table View",
+            on_click=lambda _: EventHandler.list_view(self.table_view_btt, "table", self.view_btt_list))
+        self.thumb_view_btt = IconButton(
+            icon=(icons.DATASET if images_display == "thumbnail" else icons.DATASET_OUTLINED),
+            tooltip="Thumb View",
+            on_click=lambda _: EventHandler.list_view(self.thumb_view_btt, "thumbnail", self.view_btt_list))
+        self.list_view_btt = IconButton(
+            icon=(icons.BALLOT if images_display == "list" else icons.BALLOT_OUTLINED),
+            tooltip="List View",
+            on_click=lambda _: EventHandler.list_view(self.list_view_btt, "list", self.view_btt_list))
+        self.view_btt_list = [self.table_view_btt, self.thumb_view_btt, self.list_view_btt]
+        self.bottom_menu_row = Row([
+            self.select_all_btt,
+            VerticalDivider(),
+            self.table_view_btt, 
+            self.thumb_view_btt, 
+            self.list_view_btt], 
+            spacing=0, alignment=MainAxisAlignment.END,)
 
-    # FilePicker dialog to select a directory
-    def get_directory_result(e: ft.FilePickerResultEvent):
-        if e.path:
-            directory_path.value = e.path
-            list_images(e.path)
-        else:
-            directory_path.value = "Cancelled!"
-        directory_path.update()
-    get_directory_dialog = ft.FilePicker(on_result=get_directory_result)
-
-    # Pick files dialog
-    def pick_files_result(e: ft.FilePickerResultEvent):
-        csv_file_path.value = (
-            ", ".join(map(lambda f: f.path, e.files)) if e.files else "Cancelled!"
+        # Container to hold image components
+        self.image_content = GridView( 
+            runs_count=5, 
+            max_extent=150,
+            child_aspect_ratio=1.0, 
+            spacing=10,
         )
-        csv_file_path.update()
-
-    pick_files_dialog = ft.FilePicker(on_result=pick_files_result)
-    selected_files = ft.Text()
-
-    # Function to read and display CSV data
-    def read_csv(e):
-        csv_path = csv_file_path.value
-        if os.path.isfile(csv_path):
-            df = pd.read_csv(csv_path)
-            if not df.empty:
-                csv_data_container.controls.clear()
-                for idx, row in df.iterrows():
-                    keywords_list = row['Keywords'].split(';')
-                    keyword_texts = [ft.Chip(label=ft.Text(keyword),on_select=chip_select, selected=True) for i, keyword in enumerate(keywords_list)]
-                        
-                    csv_data_container.controls.append(
-                        ft.Column([
-                            ft.Text(f"Row {idx + 1}"),
-                            ft.TextField(label="Title", value=row['Title']),
-                            ft.Row([*keyword_texts]),
-                            ft.TextField(label="Description", value=row['Description']),
-                        ])
-                    )
-                csv_data_container.update()
-            else:
-                csv_data_container.value = "CSV file is empty!"
-        else:
-            csv_data_container.value = "Invalid file path!"
-        csv_data_container.update()
-
-    #Contant \\\\\\\\\\
-    #Appbar
-    appbar=ft.AppBar(
-            leading=ft.Icon(ft.icons.PALETTE),
-            leading_width=40,
-            title=ft.Text("AppBar Example"),
-            center_title=False,
-            bgcolor=ft.colors.SURFACE_VARIANT,
-            actions=[
-            ft.IconButton(ft.icons.WB_SUNNY_OUTLINED),
-            ft.IconButton(ft.icons.FILTER_3),
-            ft.PopupMenuButton(
-                items=[
-                    ft.PopupMenuItem(text="Item 1"),
-                    ft.PopupMenuItem(),  # divider
-                    ft.PopupMenuItem(
-                        text="Checked item", checked=False, on_click=""
-                    ),
-                ]
-            ),
-        ],
+        self.main_content = ListView(  
+            spacing=10,
         )
+
+        self.right_container = Container(
+            # bgcolor=ft.colors.BROWN_400,
+                alignment=alignment.center,
+                width=700,  # Start width, adjusted according to total width
+                expand=True,
+                content=self.top_menu_open_btt,
+                padding = 10,
+        )
+        self.main_container = Container(
+            content=self.main_content,
+            #bgcolor=ft.colors.ORANGE_300,
+            alignment=alignment.center,
+            width=300,
+            padding = 10,
+            expand=False,
+        )
+
+        self.toggle_menu_btt = IconButton(icon=icons.MENU,)
+        self.images_mass_btt = IconButton(icon=icons.DATASET_OUTLINED)
+        self.upscale_btt = IconButton(icon=icons.IMAGE_SEARCH)
+        self.remove_bg_btt = IconButton(icon=icons.HIDE_IMAGE)
+        self.account_btt = IconButton(icon=icons.ACCOUNT_CIRCLE_OUTLINED)
+        self.setting_btt = IconButton(icon=icons.SETTINGS_OUTLINED)
+
+        self.main_menu_top_items = [self.toggle_menu_btt, self.images_mass_btt, self.upscale_btt, self.remove_bg_btt]
+        self.main_menu_bottom_items = [self.account_btt, self.setting_btt]
+        
+        
+        
+
+        self.main_col = Column([],expand=True, spacing=0,)
+        self.main_ctn = Container(expand=True, padding = 0, margin=0)
+        self.main_menu_col = Column([])
+        self.main_row = Row([], expand=True, spacing=0,)
+
     
-    #Button
-    open_directory_bt=ft.ElevatedButton("Open directory",
-        icon=ft.icons.FOLDER_OPEN,
-        on_click=lambda _: get_directory_dialog.get_directory_path(),
-        disabled=page.web,
-    )
-    pick_csv_bt=ft.ElevatedButton("Pick csv files",
-        icon=ft.icons.UPLOAD_FILE,
-        on_click=lambda _: pick_files_dialog.pick_files(
-            allow_multiple=True,
-        file_type=ft.FilePickerFileType.CUSTOM,
-        allowed_extensions=["csv"]),
-    )
 
-    # hide all dialogs in overlay
-    page.overlay.extend([pick_files_dialog, get_directory_dialog])
+    def main_menu_icon(self, menu_style):
 
-    # UI setup
-    page.add(
-        appbar,
-        ft.Row([
-            open_directory_bt,directory_path,image_count_label
-            ],
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        ),
+        def main_menu_toggle(menu_style):
+            main_menu_build(menu_style)
+            print(menu_style)
+
+        def main_menu_build(menu_style):
+            if menu_style == "icon":
+                self.toggle_menu_btt = IconButton(icon=icons.MENU, on_click=lambda e: main_menu_toggle("text"))
+                self.images_mass_btt = IconButton(icon=icons.DATASET_OUTLINED)
+                self.upscale_btt = IconButton(icon=icons.IMAGE_SEARCH)
+                self.remove_bg_btt = IconButton(icon=icons.HIDE_IMAGE)
+                self.account_btt = IconButton(icon=icons.ACCOUNT_CIRCLE_OUTLINED)
+                self.setting_btt = IconButton(icon=icons.SETTINGS_OUTLINED)
+            else:
+                self.toggle_menu_btt = TextButton("Menu", icon=icons.MENU, on_click=lambda e: main_menu_toggle("icon"))
+                self.images_mass_btt = TextButton("Massive Metadata", icon=icons.DATASET_OUTLINED)
+                self.upscale_btt = TextButton("Images Upscale", icon=icons.IMAGE_SEARCH)
+                self.remove_bg_btt = TextButton("Remove Background", icon=icons.HIDE_IMAGE)
+                self.account_btt = TextButton("Account", icon=icons.ACCOUNT_CIRCLE_OUTLINED)
+                self.setting_btt = TextButton("Setting", icon=icons.SETTINGS_OUTLINED)
+
+            self.main_menu_col = Column([
+                self.toggle_menu_btt,
+                self.images_mass_btt,
+                self.upscale_btt,
+                self.remove_bg_btt,
+                Column([], expand=True),
+                self.account_btt,
+                self.setting_btt
+
+            ])
+            
+            return self.main_menu_col
+
+        return  main_menu_build(menu_style)
+
+    
+    def build_ui(self,):
         
-         # Image contant layout
-        ft.Row(
-            [
-                ft.Container(
-                    content=image_container,
-                    #bgcolor=ft.colors.ORANGE_300,
-                    alignment=ft.alignment.top_center,
-                    expand=True,
-                ),
-                ft.VerticalDivider(),
-                ft.Container(
-                    content=ft.Column([ft.Text("Metadata"),
-                        ft.Container(content=ft.Image(src="uploads\dd.jpg",  height=150,
-                        border_radius=ft.border_radius.all(10),fit=ft.ImageFit.FIT_WIDTH,),
-                        alignment=ft.alignment.center),               
-                        ft.TextField(label="Title"),
-                        ft.TextField(label="Keywords", multiline=True,value="line1\nline2\nline3\nline4\nline5",),
-                        ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
-                        ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
-                        ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
-                        ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
-                        ft.Chip(label=ft.Text("Keywords01"),on_select=chip_select, selected=True),
-                        ]),
-                    #bgcolor=ft.colors.BROWN_400,
-                    alignment=ft.alignment.top_left,
-                    expand=False,
+        async def move_vertical_divider(e: DragUpdateEvent):
+            new_width = self.main_container.width + e.delta_x
+            if 100 <= new_width <= 900 and 150 <= self.right_container.width - e.delta_x:
+                self.main_container.width = new_width
+                self.right_container.width -= e.delta_x
+                await self.main_container.update_async()
+                await self.right_container.update_async()
+
+        async def show_draggable_cursor(e: HoverEvent):
+                e.control.mouse_cursor = MouseCursor.RESIZE_LEFT_RIGHT
+                await e.control.update_async()
+
+        # Create UI elements and add them to containers
+        self.main_row.controls.append(self.main_menu_col)
+        self.main_row.controls.append(self.main_ctn)
+        self.main_ctn.content = self.main_col
+        self.main_col.controls.append(self.top_menu_row)
+
+        self.top_menu_row.controls.append(self.top_menu_path_txt)
+        self.top_menu_row.controls.append(self.top_menu_stat_txt)
+        self.top_menu_row.controls.append(self.top_menu_open_btt)
+
+
+        
+        ui = Row([
+                self.main_menu_col,
+                Container( content=
+                    Column([
+                        self.top_menu_row,
+                        Row([
+                                ResponsiveRow([
+                                    Row(
+                                        controls=[
+                                            self.main_container,
+                                            GestureDetector(
+                                                content=VerticalDivider( color="white"),
+                                                drag_interval=10,
+                                                on_pan_update=move_vertical_divider,
+                                                on_hover=show_draggable_cursor,
+                                                ),
+                                            self.right_container,
+                                        ],
+                                        spacing=0,
+                                        alignment=MainAxisAlignment.SPACE_BETWEEN,
+                                    ) 
+                                ],
+                                spacing=0,
+                                expand=True,
+                                ), ], alignment=MainAxisAlignment.START, expand=True, spacing=0,
+                            ),
+                        Row([
+                            IconButton(icon=icons.MENU,),
+                            IconButton(icon=icons.MENU,),
+                            ], spacing=0, alignment=MainAxisAlignment.END,),       
+                        ], 
+                        expand=True, spacing=0,
+                    ),
+                    #bgcolor=colors.RED, 
+                    expand=True, padding = 0, margin=0
                 ),
             ],
-            spacing=0,
             expand=True,
-        ),
-        # Pick csv files
-        ft.Row([pick_csv_bt,selected_files,]),
-        # Load csv data
-        ft.Row([csv_file_path, ft.ElevatedButton("Load csv data", on_click=read_csv)]),
-        csv_data_container,
-
-        ft.Row([]),
-        ft.Row([]),        
-        ft.Row([]),
-        
-    )
-
-
-# Run the app
-ft.app(target=main)    
+            spacing=0,
+        )
+        return ui
+    
+    def images_display(path, listtype) : pass
+    
+    

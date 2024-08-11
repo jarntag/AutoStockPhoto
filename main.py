@@ -156,8 +156,11 @@ async def show_draggable_cursor(e: ft.HoverEvent):
 def main(page: ft.Page):
     page.window_width = 1000
     page.window_height = 1000
-    
-    
+    #page.window.bgcolor = ft.colors.TRANSPARENT
+    #page.bgcolor = ft.colors.TRANSPARENT
+    page.window.title_bar_hidden = True
+    #page.window.frameless = True
+
     #Function \\\\\\\\\\
 
     def embed_metadata():
@@ -404,7 +407,7 @@ def main(page: ft.Page):
     open_directory_bt=ft.ElevatedButton("Open directory",
         icon=ft.icons.FOLDER_OPEN,
         on_click=lambda _: get_directory_dialog.get_directory_path(),
-        disabled=page.web,
+        #disabled=page.web,
     )
 
     pick_csv_bt=ft.ElevatedButton("Pick csv files",

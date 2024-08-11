@@ -7,12 +7,16 @@ image_container = ft.GridView(
     child_aspect_ratio=1.0, 
     spacing=10,
 )
+image_container2 = ft.ListView(  
+    spacing=10,
+)
 
 right_container = ft.Container(
         bgcolor=ft.colors.BROWN_400,
         alignment=ft.alignment.center,
         width=300,  # Start width, adjusted according to total width
         expand=False,
+        content=image_container2
     )
 
 main_container = ft.Container(
@@ -64,27 +68,25 @@ async def show_draggable_cursor(e: ft.HoverEvent):
 
 def main(page: ft.Page):
     page.window_width = 1000
-    page.window_height = 1000
+    page.window_height = 600
     page.add(
         ft.Row([ft.Text("Keywords"),ft.Text("Keywords"),],alignment=ft.MainAxisAlignment.SPACE_BETWEEN,),
         progress_bar,
         ft.Row([
-        ft.ResponsiveRow([ft.Row(
-        controls=[
-            main_container,
-            ft.GestureDetector(
-                content=ft.VerticalDivider(),
-                drag_interval=10,
-                on_pan_update=move_vertical_divider,
-                on_hover=show_draggable_cursor,
-                
-            ),
-            right_container,
-        ],
-        spacing=0,
-        
-        
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            ft.ResponsiveRow([
+                ft.Row(controls=[
+                    main_container,
+                    ft.GestureDetector(
+                        content=ft.VerticalDivider(),
+                        drag_interval=10,
+                        on_pan_update=move_vertical_divider,
+                        on_hover=show_draggable_cursor,
+                        
+                    ),
+                    right_container,
+            ],
+            spacing=0,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
     ) ],spacing=10,
             expand=True,), 
         ],spacing=10,
@@ -135,6 +137,10 @@ def main(page: ft.Page):
                 ),shape=ft.RoundedRectangleBorder(radius=0),margin=0,color=ft.colors.GREEN,
             )
         )
+    
+    for i in range(0, 60):
+        image_container2.controls.append(ft.Text(f"Line"))
+
     page.update()
 
 ft.app(target=main)
