@@ -19,7 +19,7 @@ config['DEFAULT'] = {
     'PrefixPrompt': '',
     'MainPrompt': 'Africa\nAlgeria\nAngola\nBenin',
     'EnhancePrompt': '',
-    'SubfixPrompt': '',
+    'suffixPrompt': '',
     'MainKeywords': '',
     'AdobeCategories': ', '.join([
         "Animals", "Buildings and Architecture", "Business", "Drinks", "The Environment", 
@@ -42,7 +42,7 @@ config['USER'] = {
     'PrefixPrompt': '',
     'MainPrompt': 'Africa\nAlgeria\nAngola\nBenin',
     'EnhancePrompt': '',
-    'SubfixPrompt': '',
+    'suffixPrompt': '',
     'MainKeywords': '',
     'AdobeCategories': ', '.join([
         "Animals", "Buildings and Architecture", "Business", "Drinks", "The Environment", 

@@ -39,15 +39,19 @@ class DataProcessor:
         default_images_per_prompt = config.get('DEFAULT', 'ImagesPerPrompt')
         default_prefix_prompt = config.get('DEFAULT', 'PrefixPrompt')
         default_main_prompt = config.get('DEFAULT', 'MainPrompt')
-        default_subfix_prompt = config.get('DEFAULT', 'SubfixPrompt')
+        default_suffix_prompt = config.get('DEFAULT', 'SuffixPrompt')
         default_main_keywords = config.get('DEFAULT', 'MainKeywords')
         default_categories = config.get('DEFAULT', 'SelectCategories')
         default_adobe_categories_str = config.get('DEFAULT', 'AdobeCategories')
         default_adobe_categories_list = DataProcessor.convert_to_list(default_adobe_categories_str)
         default_image_data_str = config.get('DEFAULT', 'ImageData')
         default_image_data = DataProcessor.deserialize_image_data(default_image_data_str)
-        default_images_display = config.get('DEFAULT', 'imagesdisplay')
-        default_defaultpath = config.get('DEFAULT', 'defaultpath')
+        default_images_display = config.get('DEFAULT', 'ImagesDisplay')
+        default_defaultpath = config.get('DEFAULT', 'DefaultPath')
+        default_username = config.get('DEFAULT', 'Username')
+        default_passwords = config.get('DEFAULT', 'Passwords')
+        default_openai_api = config.get('DEFAULT', 'OpenAiApi')
+        default_gemini_api = config.get('DEFAULT', 'GeminiApi')
 
         # Access user-specific configurations
         theme = config.get('USER', 'theme', fallback=default_theme)
@@ -55,31 +59,39 @@ class DataProcessor:
         images_per_prompt = config.get('USER', 'ImagesPerPrompt', fallback=default_images_per_prompt)
         prefix_prompt = config.get('USER', 'PrefixPrompt', fallback= default_prefix_prompt)
         main_prompt = config.get('USER', 'MainPrompt', fallback=default_main_prompt)
-        subfix_prompt = config.get('USER', 'SubfixPrompt', fallback=default_subfix_prompt)
+        suffix_prompt = config.get('USER', 'SuffixPrompt', fallback=default_suffix_prompt)
         main_keywords = config.get('USER', 'MainKeywords', fallback=default_main_keywords)
         categories = config.get('USER', 'SelectCategories', fallback=default_categories)
         adobe_categories_str = config.get('USER', 'AdobeCategories', fallback=default_adobe_categories_str)
         adobe_categories_list = DataProcessor.convert_to_list(adobe_categories_str)
         image_data_str = config.get('USER', 'ImageData', fallback=default_image_data_str)
         image_data = DataProcessor.deserialize_image_data(image_data_str)
-        images_display = config.get('USER', 'imagesdisplay', fallback=default_images_display)
-        defaultpath = config.get('USER', 'defaultpath', fallback=default_defaultpath)
+        images_display = config.get('USER', 'ImagesDisplay', fallback=default_images_display)
+        defaultpath = config.get('USER', 'DefaultPath', fallback=default_defaultpath)
+        username = config.get('USER', 'Username', fallback=default_username)
+        passwords = config.get('USER', 'Passwords', fallback=default_passwords)
+        openai_api = config.get('USER', 'OpenAiApi', fallback=default_openai_api)
+        gemini_api = config.get('USER', 'GeminiApi', fallback=default_gemini_api)
 
         categories_index = int(categories)
 
         return {
-            'theme': theme,
-            'savepath': savepath,
+            'Theme': theme,
+            'SavePath': savepath,
             'ImagesPerPrompt': images_per_prompt,
             'PrefixPrompt': prefix_prompt,
             'MainPrompt': main_prompt,
-            'SubfixPrompt': subfix_prompt,
+            'SuffixPrompt': suffix_prompt,
             'MainKeywords': main_keywords,
             'SelectCategories': categories_index,
-            'adobe_categories_list': adobe_categories_list,
+            'AdobeCategoriesList': adobe_categories_list,
             'ImageData': image_data,
-            'imagesdisplay': images_display,
-            'defaultpath': defaultpath,
+            'ImagesDisplay': images_display,
+            'DefaultPath': defaultpath,
+            'Username': username,
+            'Passwords': passwords,
+            'OpenAiApi': openai_api,
+            'GeminiApi': gemini_api,
         }
     
     def serialize_image_data(image_data):
@@ -141,7 +153,7 @@ class DataProcessor:
         
         return None, None
     
-    def embed_metadata(path_txt, images_per_prompt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf, category_dropdown, stat_txt, progress_bar):
+    def embed_metadata(path_txt, images_per_prompt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf, category_dropdown, stat_txt, progress_bar):
         path=path_txt.value
         main_prompt = main_prompt_txf.value
         images = sorted([f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
@@ -162,7 +174,7 @@ class DataProcessor:
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
 
-                title = f"{prefix_prompt_txf.value} {prompt} {subfix_prompt_txf.value}"
+                title = f"{prefix_prompt_txf.value} {prompt} {suffix_prompt_txf.value}"
                 prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key

@@ -72,20 +72,20 @@ class UIBuilder(UserControl):
         # config data
         config= DataProcessor.read_config('config.ini')
 
-        theme = config['theme']
-        savepath = config['savepath']
+        theme = config['Theme']
+        savepath = config['SavePath']
         images_per_prompt = config['ImagesPerPrompt']
         prefix_prompt = config['PrefixPrompt']
         main_prompt = config['MainPrompt']
-        subfix_prompt = config['SubfixPrompt']
+        suffix_prompt = config['SuffixPrompt']
         main_keywords = config['MainKeywords']
         select_categories =  config['SelectCategories']
-        adobe_categories_list = config['adobe_categories_list']
+        adobe_categories_list = config['AdobeCategoriesList']
         image_data = config['ImageData']
-        images_listtype = config['imagesdisplay']
-        default_path = config['defaultpath']
+        images_listtype = config['ImagesDisplay']
+        default_path = config['DefaultPath']
         
-        main_title = f"Title : {prefix_prompt}{main_keywords}{subfix_prompt}"
+        main_title = f"Title : {prefix_prompt}{main_keywords}{suffix_prompt}"
         self.adobe_categories_list = adobe_categories_list
         self.images_listtype = images_listtype
         
@@ -100,12 +100,12 @@ class UIBuilder(UserControl):
             on_change=lambda e: EventHandler.toggle_theme(e, self.page),
             padding=padding.symmetric(0, 10),
             controls=[
-                Text("LIGHT"),
-                Text("DARK"),
+                Text("LIGHT Theme"),
+                Text("DARK Theme"),
             ],
         )
 
-                # Top_menu
+        # Top_menu
         self.open_dir_btt = IconButton(icon=icons.FOLDER_OPEN,
             on_click=lambda _: self.get_directory_dialog.get_directory_path(),)
         self.stat_txt = Text("",)
@@ -131,12 +131,10 @@ class UIBuilder(UserControl):
                     padding=0), expand=True),
                 ],  )
         
-
-
         # Text widget to display prompt
         self.images_per_prompt = TextField(value=f"{images_per_prompt}",width=50,)
         self.images_per_prompt_sld = Slider(label="{value}",
-            min=0, max=20, divisions=20, value=f"{images_per_prompt}", expand=True,
+            min=1, max=20, divisions=19, value=f"{images_per_prompt}", expand=True,
             on_change=lambda e: EventHandler.slider_changed(e, self.images_per_prompt)
             )
         self.images_per_prompt_row = Row([
@@ -149,17 +147,17 @@ class UIBuilder(UserControl):
         self.prefix_prompt_txf = TextField(
             label="Prefix prompt", value=f"{prefix_prompt}",
             min_lines=1,max_lines=2, multiline=True,color=colors.BLUE_700,
-            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf,),
+            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf,),
         )
         self.main_prompt_txf = TextField(label="Main prompt matrix List", value=f"{main_prompt}",
             min_lines=1,max_lines=5, 
             multiline=True,color=colors.BLUE_700,
             hint_text="Separate prompt with new line",
-            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf,),
+            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf,),
             )
-        self.subfix_prompt_txf = TextField(label="Subfix prompt", value=f"{subfix_prompt}",
+        self.suffix_prompt_txf = TextField(label="Suffix prompt", value=f"{suffix_prompt}",
             min_lines=1,max_lines=2, multiline=True,color=colors.BLUE_700,
-            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf,),
+            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf,),
             )
 
         self.main_keywords_txf = TextField(label="Keywords", value=f"{main_keywords}",
@@ -167,7 +165,7 @@ class UIBuilder(UserControl):
             multiline=True,
             color=colors.BLUE_700,
             hint_text="Separate keywords with , or new line",
-            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf,),
+            on_change= lambda e, : EventHandler.textfield_change(self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf,),
             on_blur=lambda e: EventHandler.keywords_chip_Update(self.keywords_chip_row, self.main_keywords_txf, self.keywords_select_list,),
             )
         
@@ -218,7 +216,7 @@ class UIBuilder(UserControl):
         self.keywords_chip_h = Row([Icon(icons.LABEL), Text(color=colors.BLUE_700, value ="keywords :",)])
         self.keywords_chip_row = Row([], alignment=MainAxisAlignment.START, spacing=10, wrap=True,)
 
-        
+
         #Get Button
         self.open_directory_btt=ElevatedButton("Open directory",
             icon=icons.FOLDER_OPEN,
@@ -235,7 +233,7 @@ class UIBuilder(UserControl):
                 allow_multiple=True,
                 file_type=FilePickerFileType.CUSTOM,
                 allowed_extensions=["txt"]))
-        self.get_txt_prompt = FilePicker(on_result=lambda e: EventHandler.get_prompt_result(e, self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf,))
+        self.get_txt_prompt = FilePicker(on_result=lambda e: EventHandler.get_prompt_result(e, self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf,))
 
         self.keyword_txt_btt=ElevatedButton("Load Keywords txt",
             icon=icons.UPLOAD_FILE,
@@ -243,12 +241,12 @@ class UIBuilder(UserControl):
                 allow_multiple=True,
                 file_type=FilePickerFileType.CUSTOM,
                 allowed_extensions=["txt"]))
-        self.get_txt_keyword = FilePicker(on_result=lambda e: EventHandler.get_keywords_result(e, self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf, self.keywords_chip_row, self.keywords_select_list))
+        self.get_txt_keyword = FilePicker(on_result=lambda e: EventHandler.get_keywords_result(e, self.main_title_txt, self.main_keywords_txt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf, self.keywords_chip_row, self.keywords_select_list))
 
         # Embed metadata
         self.embed_metadata_bt=ElevatedButton("embed metadata",
             icon=icons.DATA_OBJECT,
-            on_click=lambda e: DataProcessor.embed_metadata(self.path_txt, self.images_per_prompt, self.prefix_prompt_txf, self.main_prompt_txf, self.subfix_prompt_txf, self.main_keywords_txf, self.category_dropdown, self.stat_txt, self.progress_bar),
+            on_click=lambda e: DataProcessor.embed_metadata(self.path_txt, self.images_per_prompt, self.prefix_prompt_txf, self.main_prompt_txf, self.suffix_prompt_txf, self.main_keywords_txf, self.category_dropdown, self.stat_txt, self.progress_bar),
         )
 
         # Bottom_menu
@@ -285,19 +283,9 @@ class UIBuilder(UserControl):
             self.list_view_btt], 
             spacing=0, alignment=MainAxisAlignment.END,)
 
-        
-        
-        # Main_menu
-        self.toggle_menu_btt = IconButton(icon=icons.MENU, on_click=lambda e: self.build_mainmenu("text"))
-        self.images_mass_btt = IconButton(icon=icons.DATASET_OUTLINED, on_click= lambda e: self.build_massive())
-        self.upscale_btt = IconButton(icon=icons.IMAGE_SEARCH)
-        self.remove_bg_btt = IconButton(icon=icons.HIDE_IMAGE)
-        self.account_btt = IconButton(icon=icons.ACCOUNT_CIRCLE_OUTLINED)
-        self.setting_btt = IconButton(icon=icons.SETTINGS_OUTLINED, on_click= lambda e: self.build_setting())
 
-        self.main_menu_top_items = [self.images_mass_btt, self.upscale_btt, self.remove_bg_btt]
-        self.main_menu_bottom_items = [self.account_btt, self.setting_btt]
-        
+
+
         # Main_UI
         self.content_div = VerticalDivider(width=4, thickness=1)
         self.content_ges = GestureDetector()
@@ -368,37 +356,39 @@ class UIBuilder(UserControl):
             ],
         )
         
-        
 
-    
+
+
     # Build Main_menu UI
     def build_mainmenu(self,menu_style):
         self.main_menu_col.controls.clear()
 
         if menu_style == "icon":
-            self.toggle_menu_btt = TextButton("", icon=icons.MENU, on_click=lambda _: self.build_mainmenu("text"))
-            self.images_mass_btt = TextButton("", icon=icons.DATASET_OUTLINED, on_click= lambda e: self.build_massive())
-            self.upscale_btt = TextButton("", icon=icons.IMAGE_SEARCH, on_click= lambda e: self.build_upscale())
-            self.remove_bg_btt = TextButton("", icon=icons.HIDE_IMAGE, on_click= lambda e: self.build_removebg())
-            self.account_btt = TextButton("", icon=icons.ACCOUNT_CIRCLE_OUTLINED, on_click= lambda e: self.build_user())
-            self.setting_btt = TextButton("", icon=icons.SETTINGS_OUTLINED, on_click= lambda e: self.build_setting())
+            toggle_menu_btt = TextButton("", icon=icons.MENU, on_click=lambda _: self.build_mainmenu("text"))
+            images_mass_btt = TextButton("", icon=icons.DATASET_OUTLINED, on_click= lambda e: self.build_massive())
+            aigen_btt = TextButton("", icon=icons.AUTO_AWESOME, on_click= lambda e: self.build_aigen())
+            upscale_btt = TextButton("", icon=icons.OPEN_IN_NEW, on_click= lambda e: self.build_upscale())
+            remove_bg_btt = TextButton("", icon=icons.TEXTURE, on_click= lambda e: self.build_removebg())
+            account_btt = TextButton("", icon=icons.ACCOUNT_CIRCLE_OUTLINED, on_click= lambda e: self.build_user())
+            setting_btt = TextButton("", icon=icons.SETTINGS_OUTLINED, on_click= lambda e: self.build_setting())
         else:
-            self.toggle_menu_btt = TextButton("Menu", icon=icons.MENU, on_click=lambda _: self.build_mainmenu("icon"))
-            self.images_mass_btt = TextButton("Massive Metadata", icon=icons.DATASET_OUTLINED, on_click= lambda e: self.build_massive())
-            self.upscale_btt = TextButton("Images Upscale", icon=icons.IMAGE_SEARCH, on_click= lambda e: self.build_upscale())
-            self.remove_bg_btt = TextButton("Remove Background", icon=icons.HIDE_IMAGE, on_click= lambda e: self.build_removebg())
-            self.account_btt = TextButton("Account", icon=icons.ACCOUNT_CIRCLE_OUTLINED, on_click= lambda e: self.build_user())
-            self.setting_btt = TextButton("Setting", icon=icons.SETTINGS_OUTLINED, on_click= lambda e: self.build_setting())
+            toggle_menu_btt = TextButton("Menu", icon=icons.MENU, on_click=lambda _: self.build_mainmenu("icon"))
+            images_mass_btt = TextButton("Massive Metadata", icon=icons.DATASET_OUTLINED, on_click= lambda e: self.build_massive())
+            aigen_btt = TextButton("AI Generate", icon=icons.AUTO_AWESOME, on_click= lambda e: self.build_aigen())
+            upscale_btt = TextButton("Images Upscale", icon=icons.OPEN_IN_NEW, on_click= lambda e: self.build_upscale())
+            remove_bg_btt = TextButton("Remove Background", icon=icons.TEXTURE, on_click= lambda e: self.build_removebg())
+            account_btt = TextButton("Account", icon=icons.ACCOUNT_CIRCLE_OUTLINED, on_click= lambda e: self.build_user())
+            setting_btt = TextButton("Setting", icon=icons.SETTINGS_OUTLINED, on_click= lambda e: self.build_setting())
 
-        self.main_menu_top_items = [self.images_mass_btt, self.upscale_btt, self.remove_bg_btt]
-        self.main_menu_bottom_items = [self.account_btt, self.setting_btt]
+        main_menu_top_items = [images_mass_btt, aigen_btt, upscale_btt, remove_bg_btt]
+        main_menu_bottom_items = [account_btt, setting_btt]
         
-        self.main_menu_col.controls.append(self.toggle_menu_btt)
+        self.main_menu_col.controls.append(toggle_menu_btt)
         self.main_menu_col.controls.append(Divider(),)
-        for menu in self.main_menu_top_items :
+        for menu in main_menu_top_items :
             self.main_menu_col.controls.append(menu)
         self.main_menu_col.controls.append(Column([], expand=True),)
-        for menu in self.main_menu_bottom_items :
+        for menu in main_menu_bottom_items :
             self.main_menu_col.controls.append(menu)
 
         self.page.update()
@@ -406,8 +396,11 @@ class UIBuilder(UserControl):
     
     # Build Main_menu UI
     def build_massive(self):
+
+        ui_head = Text("Massive Metaadata Embed")
         self.main_content.controls.clear()
         
+        self.main_content.controls.append(ui_head)
         self.main_content.controls.append(self.web_seg_btt)
         self.main_content.controls.append(self.images_per_prompt_row)
         self.main_content.controls.append(Divider(height=1,))
@@ -415,7 +408,7 @@ class UIBuilder(UserControl):
         self.main_content.controls.append(self.main_title_txt)
         self.main_content.controls.append(self.prefix_prompt_txf)
         self.main_content.controls.append(self.main_prompt_txf)
-        self.main_content.controls.append(self.subfix_prompt_txf)
+        self.main_content.controls.append(self.suffix_prompt_txf)
         self.main_content.controls.append(Divider(height=1,))
         self.main_content.controls.append(self.main_keywords_txf)
         self.main_content.controls.append(self.keywords_chip_h)
@@ -427,53 +420,160 @@ class UIBuilder(UserControl):
         return self.main_content
     
     # Build user UI
-    def build_user(self):
-        ui = Text("Account")
+    def build_aigen(self):
+        ui_head = Text("AI Generate")
+        ai_provide_seg = SegmentedButton(
+            selected_icon=Icon(icons.CHECK),
+            selected={"1",},
+            allow_multiple_selection=False,
+            segments=[
+                Segment(
+                    value="1",
+                    label=Text("Open Ai"),
+                    #icon=Icon(icons.LOOKS_ONE),
+                ),
+                Segment(
+                    value="2",
+                    label=Text("Gemini"),
+                    #icon=Icon(icons.LOOKS_TWO),
+                ),
+            ],
+        )
+        
         self.main_content.controls.clear()
         
-        self.main_content.controls.append(ui)
+        self.main_content.controls.append(ui_head)
+        self.main_content.controls.append(ai_provide_seg)
 
         self.page.update()
         return self.main_content
     
     # Build upscale UI
     def build_upscale(self):
-        ui = Text("upscale")
+        ui_head = Text("Upscale")
+        upscale_model_seg = SegmentedButton(
+            selected_icon=Icon(icons.CHECK),
+            selected={"1",},
+            allow_multiple_selection=False,
+            segments=[
+                Segment(
+                    value="1",
+                    label=Text("ESRGEN"),
+                    #icon=Icon(icons.LOOKS_ONE),
+                ),
+                Segment(
+                    value="2",
+                    label=Text("Latent"),
+                    #icon=Icon(icons.LOOKS_TWO),
+                ),
+            ],
+        )
         self.main_content.controls.clear()
         
-        self.main_content.controls.append(ui)
+        self.main_content.controls.append(ui_head)
+        self.main_content.controls.append(upscale_model_seg)
 
         self.page.update()
         return self.main_content
     
     # Build upscale UI
     def build_removebg(self):
-        ui = Text("remove background")
+        ui_head = Text("Remove Background")
+        removebg_model_seg = SegmentedButton(
+            selected_icon=Icon(icons.CHECK),
+            selected={"1",},
+            allow_multiple_selection=False,
+            segments=[
+                Segment(
+                    value="1",
+                    label=Text("Model1"),
+                    #icon=Icon(icons.LOOKS_ONE),
+                ),
+                Segment(
+                    value="2",
+                    label=Text("Model2"),
+                    #icon=Icon(icons.LOOKS_TWO),
+                ),
+            ],
+        )
         self.main_content.controls.clear()
         
-        self.main_content.controls.append(ui)
+        self.main_content.controls.append(ui_head)
+        self.main_content.controls.append(removebg_model_seg)
 
         self.page.update()
         return self.main_content
 
-    def build_setting(self):
+    # Build user UI
+    def build_user(self):
+        config= DataProcessor.read_config('config.ini')
+
+        username = config['Username']
+        passwords = config['Passwords']
+        openai_api = config['OpenAiApi']
+        gemini_api = config['GeminiApi']
+
+        ui_head = Text("Account")
+        username_txf = TextField(label="Username", value=f"{username}")
+        passwords_txf = TextField(label="Passwords", value=f"{passwords}", password=True, can_reveal_password=True)
+
+        openai_api_txf = TextField(label="Open Ai Api", value=f"{openai_api}", password=True, can_reveal_password=True)
+        get_openai_api = Row([Text(value="Open Ai"), Row([], expand=True), TextButton(text="get Open ai api", on_click=lambda e:  e.control.page.launch_url("https://platform.openai.com/settings/profile?tab=api-keys")),])
+
+        gemini_api_txf = TextField(label="Gemini Api", value=f"{gemini_api}", password=True, can_reveal_password=True)
+        get_gemini_api = Row([Text(value="Gemini"), Row([], expand=True), TextButton(text="get Gemini api", on_click=lambda e:  e.control.page.launch_url("https://aistudio.google.com/app/apikey")),])
+
+        token_txt = Row([Text(value="Your Token : 100"), Row([], expand=True), ElevatedButton("Buy Token", icon=icons.GENERATING_TOKENS_SHARP),])
+
         
-        ui = Text("Setting")
+
+        self.main_content.controls.clear()
+        
+        self.main_content.controls.append(ui_head)
+        self.main_content.controls.append(username_txf)
+        self.main_content.controls.append(passwords_txf)
+        self.main_content.controls.append(Divider(height=1,))
+        self.main_content.controls.append(get_openai_api)
+        self.main_content.controls.append(openai_api_txf)
+        
+        self.main_content.controls.append(Divider(height=1,))
+        self.main_content.controls.append(get_gemini_api)
+        self.main_content.controls.append(gemini_api_txf)
+        
+        self.main_content.controls.append(Divider(height=1,))
+        self.main_content.controls.append(token_txt)
+        
+        self.page.update()
+        return self.main_content
+
+    def build_setting(self):
+        ui_head = Text("Setting")
+        adobe_mr_title = Row([Icon(icons.PERSON_PIN), Text("Adobe model releases"),Row([], expand=True), IconButton(icon=icons.PERSON_ADD_ALT_OUTLINED,)])
+        adobe_mr_chp = Chip(
+        label=Text("model_releases1"),
+        leading=Icon(icons.PERSON_PIN),
+        selected=True,
+        on_click=lambda e: print("adobe_model_releases"),
+        )
     
         self.main_content.controls.clear()
-        self.main_content.controls.append(ui)
+        self.main_content.controls.append(ui_head)
         self.main_content.controls.append(self.theme_switch_csb)
         self.main_content.controls.append(self.web_seg_btt)
         self.main_content.controls.append(self.defaul_path_txf)
         self.main_content.controls.append(self.images_display_csb)
         self.main_content.controls.append(self.category_dropdown)
-        self.main_content.controls.append(self.images_per_prompt)
+        self.main_content.controls.append(self.images_per_prompt_row)
         self.main_content.controls.append(self.prefix_prompt_txf)
         self.main_content.controls.append(self.main_prompt_txf)
-        self.main_content.controls.append(self.subfix_prompt_txf)
+        self.main_content.controls.append(self.suffix_prompt_txf)
         self.main_content.controls.append(self.main_keywords_txf)
-        self.main_content.controls.append(self.save_config_btt)
         
+        self.main_content.controls.append(Divider(height=1,))
+        self.main_content.controls.append(adobe_mr_title)
+        self.main_content.controls.append(adobe_mr_chp)
+        self.main_content.controls.append(Divider(height=1,))
+        self.main_content.controls.append(self.save_config_btt)
 
         self.content_row.update()
         self.main_content.update()
@@ -509,9 +609,6 @@ class UIBuilder(UserControl):
         
         
 
-        
-        
-
         self.content_ges.content= self.content_div
 
         self.content_row.controls.append(self.main_container,)
@@ -543,7 +640,7 @@ class UIBuilder(UserControl):
 
                     Divider(),
                     self.bottom_menu_row,       
-                    ], expand=True, spacing=0,
+                    ], expand=True, 
                 ), expand=True, padding = 0, margin=0, 
                 #bgcolor=colors.RED, 
             ),

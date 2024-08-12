@@ -40,24 +40,24 @@ class EventHandler :
     # Create toggle menu
     def on_toggle_menu(e, list): pass
 
-    def textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf,) :
+    def textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf,) :
 
         prefix_prompt=prefix_prompt_txf.value
         main_prompt = main_prompt_txf.value
-        subfix_prompt = subfix_prompt_txf.value
+        suffix_prompt = suffix_prompt_txf.value
         max_length_element=0
         main_prompt_list = DataProcessor.main_prompt_process(main_prompt)
         if len(main_prompt_list) == 1 :
-            main_title = f"{prefix_prompt} {main_prompt_list[0]} {subfix_prompt}"
+            main_title = f"{prefix_prompt} {main_prompt_list[0]} {suffix_prompt}"
             main_title = f"Title : {main_title}" + f" | {len(main_title)}"
         else : 
             max_length_element = max(main_prompt_list, key=len)
 
-            main_title = f"{prefix_prompt} {max_length_element} {subfix_prompt}"
-            main_title = f"Title : {prefix_prompt} " + "{" f"{len(main_prompt_list)}" " prompt matrix}" + f" {subfix_prompt}" + f" | {len(main_title)}"
+            main_title = f"{prefix_prompt} {max_length_element} {suffix_prompt}"
+            main_title = f"Title : {prefix_prompt} " + "{" f"{len(main_prompt_list)}" " prompt matrix}" + f" {suffix_prompt}" + f" | {len(main_title)}"
 
         main_title_txt.value = main_title
-        if len(f"{prefix_prompt} {max_length_element} {subfix_prompt}") > 200:
+        if len(f"{prefix_prompt} {max_length_element} {suffix_prompt}") > 200:
             main_title_txt.color = colors.RED
         else:
             main_title_txt.color = colors.BLUE_700
@@ -94,7 +94,7 @@ class EventHandler :
         print(keywords_list)
     
     # FilePicker dialog to select and read txt
-    def get_prompt_result(e: FilePickerResultEvent, main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf,):
+    def get_prompt_result(e: FilePickerResultEvent, main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf,):
         if e.files:
             file_path = e.files[0].path
             try:
@@ -103,14 +103,14 @@ class EventHandler :
                     processed_data = content
                     main_prompt_txf.value = processed_data
                     main_prompt_txf.update()
-                    EventHandler.textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf,)
+                    EventHandler.textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf,)
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
         else:
             print("No file selected")
 
     # FilePicker dialog to select and read txt
-    def get_keywords_result(e: FilePickerResultEvent, main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf, keywords_chip_row, keywords_select_list):
+    def get_keywords_result(e: FilePickerResultEvent, main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf, keywords_chip_row, keywords_select_list):
         if e.files:
             file_path = e.files[0].path
             try:
@@ -119,7 +119,7 @@ class EventHandler :
                     processed_data = content
                     main_keywords_txf.value = processed_data
                     main_keywords_txf.update()
-                    EventHandler.textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, subfix_prompt_txf, main_keywords_txf,)
+                    EventHandler.textfield_change(main_title_txt, main_keywords_txt, prefix_prompt_txf, main_prompt_txf, suffix_prompt_txf, main_keywords_txf,)
                     EventHandler.keywords_chip_Update(keywords_chip_row, main_keywords_txf, keywords_select_list)
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
@@ -142,7 +142,7 @@ class EventHandler :
             'ImagesPerPrompt': images_per_prompt_field.value,
             'PrefixPrompt': prefix_prompt_field.value,
             'MainPrompt': main_prompt_field.value,
-            'SubfixPrompt': subfix_prompt_field.value,
+            'SuffixPrompt': suffix_prompt_field.value,
             'MainKeywords': main_keywords_field.value,
             'SelectCategories': selected_index,
             'ImageData': image_data_str,

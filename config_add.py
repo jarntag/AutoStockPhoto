@@ -10,7 +10,7 @@ config['DEFAULT'] = {
     'PrefixPrompt': '',
     'MainPrompt': 'Africa\nAlgeria\nAngola\nBenin',
     'EnhancePrompt': '',
-    'SubfixPrompt': '',
+    'SuffixPrompt': '',
     'MainKeywords': '',
     'AdobeCategories': ', '.join([
         "Animals", "Buildings and Architecture", "Business", "Drinks", "The Environment", 

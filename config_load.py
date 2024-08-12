@@ -21,7 +21,7 @@ images_per_prompt = config['DEFAULT'].get('imagesperprompt', '4')
 prefix_prompt = config['DEFAULT'].get('prefixprompt', '')
 main_prompt = config['DEFAULT'].get('mainprompt', '')
 enhance_prompt = config['DEFAULT'].get('enhanceprompt', '')
-subfix_prompt = config['DEFAULT'].get('subfixprompt', '')
+suffix_prompt = config['DEFAULT'].get('suffixprompt', '')
 main_keywords = config['DEFAULT'].get('mainkeywords', '')
 adobe_categories = config['DEFAULT'].get('adobecategories', '')
 image_data_str = config['DEFAULT'].get('imagedata', '')
@@ -34,7 +34,7 @@ user_images_per_prompt = config['USER'].get('imagesperprompt', '4')
 user_prefix_prompt = config['USER'].get('prefixprompt', '')
 user_main_prompt = config['USER'].get('mainprompt', '')
 user_enhance_prompt = config['USER'].get('enhanceprompt', '')
-user_subfix_prompt = config['USER'].get('subfixprompt', '')
+user_suffix_prompt = config['USER'].get('suffixprompt', '')
 user_main_keywords = config['USER'].get('mainkeywords', '')
 user_adobe_categories = config['USER'].get('adobecategories', '')
 user_image_data_str = config['USER'].get('imagedata', '')
@@ -54,7 +54,7 @@ def update_user_section():
         'prefixprompt': 'Updated User Prompt',
         'mainprompt': 'Updated User Main Prompt',
         'enhanceprompt': 'Updated User Enhance Prompt',
-        'subfixprompt': 'Updated User Subfix Prompt',
+        'suffixprompt': 'Updated User suffix Prompt',
         'mainkeywords': 'Updated User Keywords',
         'adobecategories': 'Updated Category1, Updated Category2',
         'imagedata': serialize_image_data({

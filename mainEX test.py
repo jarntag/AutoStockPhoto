@@ -40,7 +40,7 @@ save_path = config['USER'].get('SavePath', 'default/path')
 images_per_prompt = config['USER'].get('ImagesPerPrompt', '2')
 prefix_prompt = config['USER'].get('PrefixPrompt', '')
 main_prompt = config['USER'].get('MainPrompt', '')
-subfix_prompt = config['USER'].get('SubfixPrompt', '')
+suffix_prompt = config['USER'].get('suffixPrompt', '')
 main_keywords = config['USER'].get('MainKeywords', '')
 default_categories = config['USER'].get('SelectCategories', '')
 adobe_categories_str = config['USER'].get('AdobeCategories', '')
@@ -153,7 +153,7 @@ def main(page: ft.Page):
     ft.Page.window_height = 1000
     
     global theme_switch, save_path_field, images_per_prompt_field, prefix_prompt_field
-    global main_prompt_field, subfix_prompt_field, main_keywords_field
+    global main_prompt_field, suffix_prompt_field, main_keywords_field
     global adobe_categories_field
 
     def on_click(e, click_message):
@@ -171,7 +171,7 @@ def main(page: ft.Page):
             'ImagesPerPrompt': images_per_prompt_field.value,
             'PrefixPrompt': prefix_prompt_field.value,
             'MainPrompt': main_prompt_field.value,
-            'SubfixPrompt': subfix_prompt_field.value,
+            'suffixPrompt': suffix_prompt_field.value,
             'MainKeywords': main_keywords_field.value,
             'SelectCategories': selected_index,
             'AdobeCategories': convert_to_string([adobe_categories_field.value]),
@@ -207,7 +207,7 @@ def main(page: ft.Page):
                                         value=prefix_prompt,
                                         color=ft.colors.BLUE_700,
                                         prefix_icon=ft.icons.TEXT_FIELDS,
-                                        counter_text="Title = prefix + main + subfix prompt",)
+                                        counter_text="Title = prefix + main + suffix prompt",)
     main_prompt_field = ft.TextField(label="Main prompt matrix List", 
                                     value=main_prompt,
                                     min_lines=1,
@@ -216,8 +216,8 @@ def main(page: ft.Page):
                                     color=ft.colors.BLUE_700,
                                     prefix_icon=ft.icons.TEXT_FIELDS,
                                     counter_text="Separate each prompt with , or new line",)
-    subfix_prompt_field = ft.TextField(label="Subfix Prompt", 
-                                        value=subfix_prompt,
+    suffix_prompt_field = ft.TextField(label="suffix Prompt", 
+                                        value=suffix_prompt,
                                         color=ft.colors.BLUE_700,
                                         prefix_icon=ft.icons.TEXT_FIELDS,
                                         counter_text="0 totle Title symbols typed",)
@@ -276,7 +276,7 @@ def main(page: ft.Page):
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
 
-                title = f"{prefix_prompt_field.value} {prompt} {subfix_prompt_field.value}"
+                title = f"{prefix_prompt_field.value} {prompt} {suffix_prompt_field.value}"
                 prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key
@@ -522,7 +522,7 @@ def main(page: ft.Page):
 
     # FilePicker dialog to select a directory
     def image_metadata_Process(e):
-        title = f"{prefix_prompt_field.value} {main_prompt_field.value} {subfix_prompt_field.value}"
+        title = f"{prefix_prompt_field.value} {main_prompt_field.value} {suffix_prompt_field.value}"
         keywords = main_keywords_field.value.replace("\n", "; ").replace(",", "; ")
         image_title.value = f"{title}"
         image_keywords.value = f"{keywords}"
@@ -725,7 +725,7 @@ def main(page: ft.Page):
                         ft.Row([images_per_prompt_field]),
                         ft.Row([prefix_prompt_field]),
                         ft.Row([main_prompt_field]),
-                        ft.Row([subfix_prompt_field]),
+                        ft.Row([suffix_prompt_field]),
                         ft.Row([main_keywords_field]),
                         ft.Row([save_path_field]),
                         ft.Row([adobe_categories_field]),
@@ -770,7 +770,7 @@ def main(page: ft.Page):
                 main_prompt_field,
                 ft.Row([mainprompt_bt,],
                     alignment=ft.MainAxisAlignment.END,),
-                subfix_prompt_field,
+                suffix_prompt_field,
                 #ft.Text("Keywords"),
                 # Pick csv files
                 # Load csv data

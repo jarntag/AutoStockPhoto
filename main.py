@@ -63,8 +63,8 @@ enhance_prompt = ft.TextField(
     multiline=True,
     color=ft.colors.BLUE_700,
 )
-subfix_prompt = ft.TextField(
-    label="Subfix prompt", 
+suffix_prompt = ft.TextField(
+    label="suffix prompt", 
     value=", ultra realistic, candid, social media, avatar image, plain solid background",
     min_lines=1,
     max_lines=2, 
@@ -183,7 +183,7 @@ def main(page: ft.Page):
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
                 prompt=prompt.replace("\n", " ").replace("'", "")
-                title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{subfix_prompt.value}"
+                title = f"{prefix_prompt.value} {prompt} {enhance_prompt.value}{suffix_prompt.value}"
 
                 # Prepare prompt key
                 prompt_words = [word.rstrip('.,!?') for word in prompt.lower().split() if len(word) > 2]
@@ -372,7 +372,7 @@ def main(page: ft.Page):
 
     # FilePicker dialog to select a directory
     def image_metadata_Process(e):
-        title = f"{prefix_prompt.value} {main_prompt.value} {enhance_prompt.value}{subfix_prompt.value}"
+        title = f"{prefix_prompt.value} {main_prompt.value} {enhance_prompt.value}{suffix_prompt.value}"
         keywords = main_keywords.value.replace("\n", "; ").replace(",", "; ")
         image_title.value = f"{title}"
         image_keywords.value = f"{keywords}"
@@ -505,7 +505,7 @@ def main(page: ft.Page):
                 ),
                 
                 enhance_prompt,
-                subfix_prompt,
+                suffix_prompt,
                 #ft.Text("Keywords"),
                 # Pick csv files
                 # Load csv data

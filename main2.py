@@ -52,7 +52,7 @@ class ImageManager:
         return []  # Example: return an empty list
 
 class UIBuilder:
-    def __init__(self, processed_data, main_title, prefix_prompt, subfix_prompt, main_keywords,):
+    def __init__(self, processed_data, main_title, prefix_prompt, suffix_prompt, main_keywords,):
         
         self.main_container = ft.Container(
             #bgcolor=ft.colors.ORANGE_300,
@@ -92,8 +92,8 @@ class UIBuilder:
             value=prefix_prompt,
             color=ft.colors.BLUE_700,
             #prefix_icon=ft.icons.TEXT_FIELDS,
-            #counter_text="Title = prefix + main + subfix prompt",
-            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt))
+            #counter_text="Title = prefix + main + suffix prompt",
+            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt))
         self.main_prompt_field = ft.TextField(
             label="Main prompt matrix List", 
             value=main_prompt,
@@ -103,14 +103,14 @@ class UIBuilder:
             color=ft.colors.BLUE_700,
             #prefix_icon=ft.icons.TEXT_FIELDS,
             counter_text="Separate each prompt with new line",
-            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt))
-        self.subfix_prompt_field = ft.TextField(
-            label="Subfix Prompt", 
-            value=subfix_prompt,
+            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt))
+        self.suffix_prompt_field = ft.TextField(
+            label="suffix Prompt", 
+            value=suffix_prompt,
             color=ft.colors.BLUE_700,
             #prefix_icon=ft.icons.TEXT_FIELDS,
             #counter_text="0 totle Title symbols typed",
-            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt))
+            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt))
         
         
         self.image_metadata_txt = ft.Text(value = "Metadata | Category : Animals | 0/200 Title characters | 0/49 keywords")
@@ -181,7 +181,7 @@ class UIBuilder:
             #prefix_icon=ft.icons.SELL,
             #helper_text="Separate each keywords with , or new line",
             counter_text="Separate each keywords with , or new line",
-            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt),
+            on_change= lambda e, : EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt),
             on_blur=lambda e: EventHandler.keywords_chip_Update(self.keywords_chip_row))
         self.keywords_chip = ft.Chip(label=ft.Text("Promt to Keyword"),on_select=DataProcessor.keywords_chip, selected=False)
     
@@ -199,7 +199,7 @@ class UIBuilder:
         self.right_content.controls.append(self.image_title_txt)
         self.right_content.controls.append(self.prefix_prompt_field)
         self.right_content.controls.append(self.main_prompt_field)
-        self.right_content.controls.append(self.subfix_prompt_field)
+        self.right_content.controls.append(self.suffix_prompt_field)
         self.right_content.controls.append(self.main_keywords_field)
         
         self.right_content.controls.append(self.keywords_chip_h)
@@ -618,7 +618,7 @@ class DataProcessor:
     def read_config(config_file):
         config = configparser.ConfigParser()
         config.read(config_file)
-        global theme, savepath, images_per_prompt, prefix_prompt, main_prompt, subfix_prompt
+        global theme, savepath, images_per_prompt, prefix_prompt, main_prompt, suffix_prompt
         global main_keywords, categories_index, adobe_categories_list, image_data, images_display
         # Access configuration values
         default_theme = config.get('DEFAULT', 'theme')
@@ -626,7 +626,7 @@ class DataProcessor:
         default_images_per_prompt = config.get('DEFAULT', 'ImagesPerPrompt')
         default_prefix_prompt = config.get('DEFAULT', 'PrefixPrompt')
         default_main_prompt = config.get('DEFAULT', 'MainPrompt')
-        default_subfix_prompt = config.get('DEFAULT', 'SubfixPrompt')
+        default_suffix_prompt = config.get('DEFAULT', 'suffixPrompt')
         default_main_keywords = config.get('DEFAULT', 'MainKeywords')
         default_categories = config.get('DEFAULT', 'SelectCategories')
         default_adobe_categories_str = config.get('DEFAULT', 'AdobeCategories')
@@ -641,7 +641,7 @@ class DataProcessor:
         images_per_prompt = config.get('USER', 'ImagesPerPrompt', fallback=default_images_per_prompt)
         prefix_prompt = config.get('USER', 'PrefixPrompt', fallback= default_prefix_prompt)
         main_prompt = config.get('USER', 'MainPrompt', fallback=default_main_prompt)
-        subfix_prompt = config.get('USER', 'SubfixPrompt', fallback=default_subfix_prompt)
+        suffix_prompt = config.get('USER', 'suffixPrompt', fallback=default_suffix_prompt)
         main_keywords = config.get('USER', 'MainKeywords', fallback=default_main_keywords)
         categories = config.get('USER', 'SelectCategories', fallback=default_categories)
         adobe_categories_str = config.get('USER', 'AdobeCategories', fallback=default_adobe_categories_str)
@@ -658,7 +658,7 @@ class DataProcessor:
             'ImagesPerPrompt': images_per_prompt,
             'PrefixPrompt': prefix_prompt,
             'MainPrompt': main_prompt,
-            'SubfixPrompt': subfix_prompt,
+            'suffixPrompt': suffix_prompt,
             'MainKeywords': main_keywords,
             'SelectCategories': categories_index,
             'adobe_categories_list': adobe_categories_list,
@@ -694,7 +694,7 @@ class DataProcessor:
             for j, image_file in enumerate(prompt_images):
                 image_path = os.path.join(path, image_file)
 
-                title = f"{prefix_prompt_field.value} {prompt} {subfix_prompt_field.value}"
+                title = f"{prefix_prompt_field.value} {prompt} {suffix_prompt_field.value}"
                 prompt=prompt.replace("\n", " ").replace("'", "")
 
                 # Prepare prompt key
@@ -791,7 +791,7 @@ class EventHandler:
                     processed_data = content
                     main_prompt_field.value = processed_data
                     main_prompt_field.update()
-                    EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt)
+                    EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt)
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
         else:
@@ -807,7 +807,7 @@ class EventHandler:
                     processed_data = content
                     main_keywords_field.value = processed_data
                     main_keywords_field.update()
-                    EventHandler.textfield_change(main_title, prefix_prompt, subfix_prompt)
+                    EventHandler.textfield_change(main_title, prefix_prompt, suffix_prompt)
                     EventHandler.keywords_chip_Update(keywords_chip_row)
             except Exception as ex:
                 print(f"An error occurred while loading the text file: {ex}")
@@ -879,24 +879,24 @@ class EventHandler:
 
         EventHandler.list_change(listtype_current)
 
-    def textfield_change(main_title, prefix_prompt, subfix_prompt) :
+    def textfield_change(main_title, prefix_prompt, suffix_prompt) :
 
         prefix_prompt=prefix_prompt_field.value
         main_prompt = main_prompt_field.value
-        subfix_prompt = subfix_prompt_field.value
+        suffix_prompt = suffix_prompt_field.value
         max_length_element=0
         main_prompt_list = DataProcessor.main_prompt_process()
         if len(main_prompt_list) == 1 :
-            main_title = f"{prefix_prompt} {main_prompt_list[0]} {subfix_prompt}"
+            main_title = f"{prefix_prompt} {main_prompt_list[0]} {suffix_prompt}"
             main_title = f"Title : {main_title}" + f" | {len(main_title)}"
         else : 
             max_length_element = max(main_prompt_list, key=len)
 
-            main_title = f"{prefix_prompt} {max_length_element} {subfix_prompt}"
-            main_title = f"Title : {prefix_prompt} " + "{" f"{len(main_prompt_list)}" " prompt matrix}" + f" {subfix_prompt}" + f" | {len(main_title)}"
+            main_title = f"{prefix_prompt} {max_length_element} {suffix_prompt}"
+            main_title = f"Title : {prefix_prompt} " + "{" f"{len(main_prompt_list)}" " prompt matrix}" + f" {suffix_prompt}" + f" | {len(main_title)}"
 
         image_title_txt.value = main_title
-        if len(f"{prefix_prompt} {max_length_element} {subfix_prompt}") > 200:
+        if len(f"{prefix_prompt} {max_length_element} {suffix_prompt}") > 200:
             image_title_txt.color = ft.colors.RED
         else:
             image_title_txt.color = ft.colors.BLUE_700
@@ -967,7 +967,7 @@ def main(page: ft.Page):
     ft.Page.window_height = 1000
     
     global theme_switch, save_path_field, images_per_prompt_field, prefix_prompt_field
-    global main_prompt_field, subfix_prompt_field, main_keywords_field, progress_bar
+    global main_prompt_field, suffix_prompt_field, main_keywords_field, progress_bar
     global adobe_categories_field,image_count_label, directory_path, processed_data,images_display
     global select_all_bt, mainprompt_bt, list_buttons, table_view_bt, list_view_bt, thumb_view_bt
     global dlg, get_directory_dialog, main_container, right_container, keywords_chip_row
@@ -981,7 +981,7 @@ def main(page: ft.Page):
     images_per_prompt = config['ImagesPerPrompt']
     prefix_prompt = config['PrefixPrompt']
     main_prompt = config['MainPrompt']
-    subfix_prompt = config['SubfixPrompt']
+    suffix_prompt = config['suffixPrompt']
     main_keywords = config['MainKeywords']
     categories = config['SelectCategories']
     adobe_categories_list = config['adobe_categories_list']
@@ -990,7 +990,7 @@ def main(page: ft.Page):
 
     categories_index = int(categories)
 
-    main_title = f"Title : {prefix_prompt} {main_prompt} {subfix_prompt}"
+    main_title = f"Title : {prefix_prompt} {main_prompt} {suffix_prompt}"
     keywords_selected_list = []  
 
     page.theme_mode = (ft.ThemeMode.LIGHT if theme.upper() == 'LIGHT' else ft.ThemeMode.DARK)
@@ -1008,7 +1008,7 @@ def main(page: ft.Page):
         processed_data = []
         
     # Build UI
-    ui_builder = UIBuilder(processed_data, main_title, prefix_prompt, subfix_prompt, main_keywords,)
+    ui_builder = UIBuilder(processed_data, main_title, prefix_prompt, suffix_prompt, main_keywords,)
     ui = ui_builder.build_ui()
 
     directory_path = ui_builder.directory_path
@@ -1019,7 +1019,7 @@ def main(page: ft.Page):
     select_all_bt = ui_builder.select_all_bt
     prefix_prompt_field = ui_builder.prefix_prompt_field
     main_prompt_field = ui_builder.main_prompt_field
-    subfix_prompt_field = ui_builder.subfix_prompt_field
+    suffix_prompt_field = ui_builder.suffix_prompt_field
     main_keywords_field = ui_builder.main_keywords_field
 
     image_title_txt = ui_builder.image_title_txt

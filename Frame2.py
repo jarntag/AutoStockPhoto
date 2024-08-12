@@ -77,7 +77,7 @@ directory_path = Text("Select images directory path first! ")
 csv_file_path = TextField(label="CSV File Path")
 prefix_prompt = TextField(label="Prefix prompt", value="",
     min_lines=1,max_lines=2, multiline=True,color=colors.BLUE_700,)
-subfix_prompt = TextField(label="Subfix prompt", value=", ultra realistic, candid, social media, avatar image, plain solid background",
+suffix_prompt = TextField(label="suffix prompt", value=", ultra realistic, candid, social media, avatar image, plain solid background",
     min_lines=1,max_lines=2, multiline=True,color=colors.BLUE_700,)
 main_prompt = TextField(label="Main prompt matrix List", value="",
     min_lines=1,max_lines=5, multiline=True,color=colors.BLUE_700,)
