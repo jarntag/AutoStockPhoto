@@ -19,7 +19,7 @@ def main(page: Page):
 
     
     # hide all dialogs in overlay
-    page.overlay.extend([ app_ui.get_directory_dialog, app_ui.get_txt_prompt, app_ui.get_txt_keyword ])
+    page.overlay.extend([ app_ui.get_directory_dialog, app_ui.get_txt_prompt, app_ui.get_txt_keyword, ])
 
     page.add(ui)
     

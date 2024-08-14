@@ -62,6 +62,7 @@ from image_manager import ImageManager
 from check_process import CheckProcess
 from custom_class import ImageCard, ImageCardList
 
+
 class UIBuilder(UserControl):
 
     def __init__(self, page):
@@ -209,7 +210,7 @@ class UIBuilder(UserControl):
         self.progress_bar = ProgressBar(bar_height=2, value=0, )
         
         self.category_dropdown = Dropdown(
-            label=(f"{adobe_categories_list[int(select_categories-1)]}" if select_categories is not None and select_categories > 0 else "Selected Category"),
+            label=(f"{adobe_categories_list[int(select_categories-1)]}" if select_categories is not None and select_categories > 0 else "Select Category"),
             options=[dropdown.Option(key=f"{category}") for index, category in enumerate(adobe_categories_list)],
             on_change=lambda e:EventHandler.on_change_category_dropdown(e, adobe_categories_list),)
         
@@ -351,11 +352,18 @@ class UIBuilder(UserControl):
                 Segment(
                     value="4",
                     label=Text("FreePik"),
-                    #icon=Icon(icons.LOOKS_4),
+                    #icon=Icon(icons.LOOKS_4), vecteezy
+                ),
+                Segment(
+                    value="5",
+                    label=Text("Vecteezy"),
+                    #icon=Image(src="assets/icon.png", width=24, height=24),
+                    #icon=Icon(icons.LOOKS_4), vecteezy
                 ),
             ],
         )
         
+
 
 
 
@@ -397,7 +405,7 @@ class UIBuilder(UserControl):
     # Build Main_menu UI
     def build_massive(self):
 
-        ui_head = Text("Massive Metaadata Embed")
+        ui_head = Text("Massive Metadata Embed")
         self.main_content.controls.clear()
         
         self.main_content.controls.append(ui_head)
@@ -450,56 +458,101 @@ class UIBuilder(UserControl):
     
     # Build upscale UI
     def build_upscale(self):
+        from upscale import UpScale
+        def slider_changed(e):
+            scale_txt.value = f"Scale : {int(e.control.value)}X"
+            self.page.update()
+        def denoise_changed(e):
+            denoise_txt.value = f"Denoise Strength : {(e.control.value)}"
+            self.page.update()
+
         ui_head = Text("Upscale")
-        upscale_model_seg = SegmentedButton(
+        scale_txt = Text("Scale")
+        denoise_txt = Text("Denoise Strength")
+        
+        model_files = UpScale.get_model_files()
+        model_dropdown = Dropdown(
+            label="Upscale Model",
+            options=[dropdown.Option(model) for model in model_files],
+        )
+        scale_slider = Slider(min=2, max=4, value=2, divisions=2, label="{value}", expand=True, on_change=slider_changed)
+        denoise_slider = Slider(min=0, max=1, value=0.5, divisions=10, label="{value}", expand=True, on_change=denoise_changed)
+
+        input_image = Image(width=300, height=300, fit=ImageFit.CONTAIN, src="assets/blank-thumbnail.jpg")
+        output_image = Image(width=300, height=300, fit=ImageFit.CONTAIN, src="assets/blank-thumbnail.jpg")
+
+        scale_txt.value = f"Scale : {int(scale_slider.value)}X"
+        denoise_txt.value = f"Denoise Strength : {(denoise_slider.value)}"
+
+        upscale_button = ElevatedButton("Upscale", on_click=lambda e: UpScale.upscale_image(e, input_image, model_dropdown, output_image, self.page))
+        batch_seg = SegmentedButton(
             selected_icon=Icon(icons.CHECK),
             selected={"1",},
             allow_multiple_selection=False,
             segments=[
                 Segment(
                     value="1",
-                    label=Text("ESRGEN"),
+                    label=Text("Single Image"),
                     #icon=Icon(icons.LOOKS_ONE),
                 ),
                 Segment(
                     value="2",
-                    label=Text("Latent"),
+                    label=Text("Select Folder"),
                     #icon=Icon(icons.LOOKS_TWO),
                 ),
             ],
         )
+
         self.main_content.controls.clear()
         
         self.main_content.controls.append(ui_head)
-        self.main_content.controls.append(upscale_model_seg)
+        
+        self.main_content.controls.append(model_dropdown)
+        self.main_content.controls.append(Row([scale_txt, scale_slider], expand=True))
+        self.main_content.controls.append(Row([denoise_txt, denoise_slider], expand=True))
+
+        self.main_content.controls.append(batch_seg)
+        self.main_content.controls.append(Row([ElevatedButton("Choose image",), ElevatedButton("Choose Folder",)]))
+        self.main_content.controls.append(Row([input_image, output_image], expand=True, spacing=0))
+
+        self.main_content.controls.append(upscale_button)
 
         self.page.update()
         return self.main_content
     
     # Build upscale UI
     def build_removebg(self):
+        from removebg import RemoveBG
+
         ui_head = Text("Remove Background")
-        removebg_model_seg = SegmentedButton(
+        
+        input_image = Image(width=300, height=300, fit=ImageFit.CONTAIN, src="assets/blank-thumbnail.jpg")
+        output_image = Image(width=300, height=300, fit=ImageFit.CONTAIN, src="assets/blank-thumbnail.jpg")
+        batch_seg = SegmentedButton(
             selected_icon=Icon(icons.CHECK),
             selected={"1",},
             allow_multiple_selection=False,
             segments=[
                 Segment(
                     value="1",
-                    label=Text("Model1"),
+                    label=Text("Single Image"),
                     #icon=Icon(icons.LOOKS_ONE),
                 ),
                 Segment(
                     value="2",
-                    label=Text("Model2"),
+                    label=Text("Select Folder"),
                     #icon=Icon(icons.LOOKS_TWO),
                 ),
             ],
         )
+        
         self.main_content.controls.clear()
         
         self.main_content.controls.append(ui_head)
-        self.main_content.controls.append(removebg_model_seg)
+        self.main_content.controls.append(batch_seg)
+        
+        self.main_content.controls.append(Row([ElevatedButton("Choose image",), ElevatedButton("Choose Folder",)]))
+        self.main_content.controls.append(Row([input_image, output_image], expand=True, spacing=0))
 
         self.page.update()
         return self.main_content

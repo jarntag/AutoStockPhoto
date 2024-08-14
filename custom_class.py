@@ -69,7 +69,7 @@ class ImageCard(Card):
             ),
             shape=RoundedRectangleBorder(radius=0),
             margin=0,
-            color=colors.GREY_50,
+            #color=colors.GREY_50,
         )
 
 class ImageCardList(Card):
